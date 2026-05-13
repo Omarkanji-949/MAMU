@@ -3,13 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAMU | Muslim Association of Meru University</title>
+    <title>MAMU | Cloud Portal</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root { --islamic-green: #065f46; --gold: #fbbf24; }
         body { font-family: 'Outfit', sans-serif; background: #fdfdfb; }
-        .islamic-gradient { background: linear-gradient(135deg, #064e3b 0%, #059669 100%); border-bottom: 5px solid var(--gold); }
+        .islamic-gradient { 
+            background: linear-gradient(135deg, #064e3b 0%, #059669 100%); 
+            border-bottom: 5px solid var(--gold); 
+        }
     </style>
 </head>
 <body>
@@ -17,7 +20,7 @@
     <header class="islamic-gradient text-white pt-10 pb-14 shadow-2xl">
         <div class="container mx-auto text-center px-4">
             <h1 class="text-3xl md:text-5xl font-bold mb-2">MAMU Cloud Directory</h1>
-            <p class="text-emerald-100 italic">Bismillah. WELCOME ALL</p>
+            <p class="text-emerald-100 italic">Connected Real-Time Database</p>
         </div>
     </header>
 
@@ -26,7 +29,7 @@
             
             <!-- Registration & Edit Form -->
             <section class="lg:col-span-1">
-                <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-t-4 border-yellow-400">
+                <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-t-4 border-yellow-400 sticky top-8">
                     <form id="memberForm" class="p-6 space-y-4">
                         <h2 id="formTitle" class="text-xl font-bold text-emerald-900 mb-4">Register Student</h2>
                         
@@ -34,6 +37,7 @@
                         <input type="hidden" id="editId">
 
                         <input type="text" id="name" placeholder="Full Name" required class="w-full border p-3 rounded-xl bg-gray-50 outline-emerald-500">
+                        
                         <select id="school" required class="w-full border p-3 rounded-xl bg-white outline-emerald-500">
                             <option value="">-- Select School --</option>
                             <option>School of Agriculture and Food Science</option>
@@ -45,45 +49,54 @@
                             <option>School of Nursing</option>
                             <option>School of Pure and Applied Sciences</option>
                         </select>
+
                         <input type="text" id="course" placeholder="Course" required class="w-full border p-3 rounded-xl bg-gray-50 outline-emerald-500">
+                        
                         <div class="grid grid-cols-2 gap-2">
                             <input type="text" id="regNo" placeholder="Reg No" required class="border p-3 rounded-xl bg-gray-50 outline-emerald-500">
                             <select id="year" class="border p-3 rounded-xl bg-white outline-emerald-500">
-                                <option>Year 1</option><option>Year 2</option><option>Year 3</option><option>Year 4</option>
+                                <option>Year 1</option>
+                                <option>Year 2</option>
+                                <option>Year 3</option>
+                                <option>Year 4</option>
                             </select>
                         </div>
+                        
                         <input type="tel" id="phone" placeholder="Phone Number" required class="w-full border p-3 rounded-xl bg-gray-50 outline-emerald-500">
                         
-                        <div class="flex gap-2">
-                            <button type="submit" id="submitBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all">
+                        <div class="flex flex-col gap-2">
+                            <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
                                 Save to Cloud
                             </button>
-                            <button type="button" id="cancelBtn" class="hidden flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 rounded-xl transition-all">
-                                Cancel
+                            <button type="button" id="cancelBtn" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl transition-all">
+                                Cancel Edit
                             </button>
                         </div>
                     </form>
                 </div>
             </section>
 
-            <!-- Live Directory -->
+            <!-- Live Directory Grouped by Year -->
             <section class="lg:col-span-2">
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div class="p-4 bg-emerald-50 border-b flex justify-between items-center">
-                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search members..." class="w-full max-w-xs p-2 border rounded-full px-4 outline-emerald-500">
-                        <span class="text-xs font-bold text-emerald-700 ml-2">LIVE SYNC ON</span>
+                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search names, reg no, or courses..." class="w-full max-w-sm p-2 border rounded-full px-4 outline-emerald-500">
+                        <div class="flex items-center gap-2">
+                            <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                            <span class="text-[10px] font-black text-emerald-700 uppercase tracking-tighter">Live Sync</span>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left" id="directoryTable">
                             <thead class="bg-emerald-900 text-white text-xs uppercase">
                                 <tr>
-                                    <th class="px-6 py-4">Name</th>
-                                    <th class="px-6 py-4">Academic Info</th>
-                                    <th class="px-6 py-4">Action</th>
+                                    <th class="px-6 py-4">Student Name</th>
+                                    <th class="px-6 py-4">Academic Details</th>
+                                    <th class="px-6 py-4 text-center">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="memberList" class="divide-y divide-gray-100 text-sm">
-                                <!-- Data from Firebase -->
+                                <!-- Data will be injected here grouped by year -->
                             </tbody>
                         </table>
                     </div>
@@ -93,12 +106,16 @@
     </main>
 
     <script>
+        // Global search filter logic
         function filterTable() {
             const input = document.getElementById("searchInput");
             const filter = input.value.toLowerCase();
             const table = document.getElementById("memberList");
             const tr = table.getElementsByTagName("tr");
+
             for (let i = 0; i < tr.length; i++) {
+                // Don't hide the "Year Header" rows during search if they match, 
+                // but usually, it's better to search everything.
                 const text = tr[i].textContent || tr[i].innerText;
                 tr[i].style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
             }
@@ -109,6 +126,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
+        // Firebase Configuration (From your Mamu-Portal project)
         const firebaseConfig = {
             apiKey: "AIzaSyCUnYdKqEfUOrXkw6EnhIjCW0VsEkkhu2k",
             authDomain: "mamu-portal.firebaseapp.com",
@@ -129,12 +147,12 @@
         const cancelBtn = document.getElementById('cancelBtn');
         const editIdInput = document.getElementById('editId');
 
-        // FORM SUBMISSION (Add or Update)
+        // Handling Form Submission (Create or Update)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const editId = editIdInput.value;
             submitBtn.disabled = true;
-            submitBtn.innerText = "Processing...";
+            submitBtn.innerText = "Processing Cloud...";
 
             const memberData = {
                 name: document.getElementById('name').value,
@@ -147,23 +165,22 @@
 
             try {
                 if (editId) {
-                    // Update existing
                     await updateDoc(doc(db, "members", editId), memberData);
-                    resetForm();
+                    resetFormState();
                 } else {
-                    // Add new
                     memberData.createdAt = Date.now();
                     await addDoc(membersCol, memberData);
                     form.reset();
                 }
             } catch (err) {
-                alert("Error: " + err.message);
+                console.error(err);
+                alert("Cloud Error: " + err.message);
             }
             submitBtn.disabled = false;
             submitBtn.innerText = editId ? "Update Member" : "Save to Cloud";
         });
 
-        // LOAD DATA FOR EDITING
+        // Setup the Edit mode
         window.prepareEdit = (id, name, school, course, regNo, year, phone) => {
             editIdInput.value = id;
             document.getElementById('name').value = name;
@@ -173,15 +190,15 @@
             document.getElementById('year').value = year;
             document.getElementById('phone').value = phone;
 
-            formTitle.innerText = "Edit Member Details";
+            formTitle.innerText = "Editing Record";
             submitBtn.innerText = "Update Member";
             cancelBtn.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
 
-        cancelBtn.onclick = resetForm;
+        cancelBtn.onclick = resetFormState;
 
-        function resetForm() {
+        function resetFormState() {
             form.reset();
             editIdInput.value = "";
             formTitle.innerText = "Register Student";
@@ -189,26 +206,62 @@
             cancelBtn.classList.add('hidden');
         }
 
-        // LISTEN FOR REAL-TIME UPDATES
-        const q = query(membersCol, orderBy("createdAt", "desc"));
-        onSnapshot(q, (snapshot) => {
+        // REAL-TIME UPDATES: Grouping & Alphabetical Sorting
+        onSnapshot(membersCol, (snapshot) => {
             const memberList = document.getElementById('memberList');
             memberList.innerHTML = '';
-            snapshot.forEach((fbDoc) => {
-                const m = fbDoc.data();
-                const id = fbDoc.id;
-                memberList.innerHTML += `
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="px-6 py-4 font-bold text-emerald-900">${m.name}<br><span class="text-xs font-normal text-gray-400">${m.regNo}</span></td>
-                        <td class="px-6 py-4">${m.school}<br><span class="text-xs text-emerald-600 font-semibold">${m.course} (${m.year})</span></td>
-                        <td class="px-6 py-4">
-                            <button onclick="prepareEdit('${id}', '${m.name}', '${m.school}', '${m.course}', '${m.regNo}', '${m.year}', '${m.phone}')" 
-                                    class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-bold hover:bg-emerald-200">
-                                Edit
-                            </button>
-                        </td>
-                    </tr>
-                `;
+
+            const allData = [];
+            snapshot.forEach(doc => {
+                allData.push({ id: doc.id, ...doc.data() });
+            });
+
+            const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4"];
+
+            yearGroups.forEach(currentYear => {
+                const studentsInYear = allData
+                    .filter(student => student.year === currentYear)
+                    .sort((a, b) => a.name.localeCompare(b.name));
+
+                if (studentsInYear.length > 0) {
+                    // Inject Year Header Row
+                    memberList.innerHTML += `
+                        <tr class="bg-emerald-50/80 border-y border-emerald-100">
+                            <td colspan="3" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
+                                ${currentYear} <span class="ml-2 font-medium text-emerald-400">| Total: ${studentsInYear.length}</span>
+                            </td>
+                        </tr>
+                    `;
+
+                    // Inject Student Rows
+                    studentsInYear.forEach(m => {
+                        memberList.innerHTML += `
+                            <tr class="hover:bg-gray-50/80 transition-colors group">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-emerald-900">${m.name}</div>
+                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
+                                    <div class="text-sm text-emerald-600">${m.course}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-center gap-3">
+                                        <button onclick="prepareEdit('${m.id}', '${m.name}', '${m.school}', '${m.course}', '${m.regNo}', '${m.year}', '${m.phone}')" 
+                                                class="text-[10px] font-bold bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                            EDIT
+                                        </button>
+                                        <a href="tel:${m.phone}" class="p-2 bg-emerald-50 rounded-full hover:bg-emerald-100 transition-colors">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                }
             });
         });
     </script>
