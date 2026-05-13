@@ -24,11 +24,15 @@
     <main class="container mx-auto px-4 -mt-8 pb-20">
         <div class="grid lg:grid-cols-3 gap-8">
             
-            <!-- Registration Form -->
+            <!-- Registration & Edit Form -->
             <section class="lg:col-span-1">
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden border-t-4 border-yellow-400">
                     <form id="memberForm" class="p-6 space-y-4">
-                        <h2 class="text-xl font-bold text-emerald-900 mb-4">Register Student</h2>
+                        <h2 id="formTitle" class="text-xl font-bold text-emerald-900 mb-4">Register Student</h2>
+                        
+                        <!-- Hidden field to track if we are editing -->
+                        <input type="hidden" id="editId">
+
                         <input type="text" id="name" placeholder="Full Name" required class="w-full border p-3 rounded-xl bg-gray-50 outline-emerald-500">
                         <select id="school" required class="w-full border p-3 rounded-xl bg-white outline-emerald-500">
                             <option value="">-- Select School --</option>
@@ -49,9 +53,15 @@
                             </select>
                         </div>
                         <input type="tel" id="phone" placeholder="Phone Number" required class="w-full border p-3 rounded-xl bg-gray-50 outline-emerald-500">
-                        <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all">
-                            Save to Cloud
-                        </button>
+                        
+                        <div class="flex gap-2">
+                            <button type="submit" id="submitBtn" class="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all">
+                                Save to Cloud
+                            </button>
+                            <button type="button" id="cancelBtn" class="hidden flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-4 rounded-xl transition-all">
+                                Cancel
+                            </button>
+                        </div>
                     </form>
                 </div>
             </section>
@@ -69,11 +79,11 @@
                                 <tr>
                                     <th class="px-6 py-4">Name</th>
                                     <th class="px-6 py-4">Academic Info</th>
-                                    <th class="px-6 py-4">Contact</th>
+                                    <th class="px-6 py-4">Action</th>
                                 </tr>
                             </thead>
                             <tbody id="memberList" class="divide-y divide-gray-100 text-sm">
-                                <!-- Data from Firebase will appear here -->
+                                <!-- Data from Firebase -->
                             </tbody>
                         </table>
                     </div>
@@ -83,30 +93,22 @@
     </main>
 
     <script>
-        // Search Functionality
         function filterTable() {
             const input = document.getElementById("searchInput");
             const filter = input.value.toLowerCase();
             const table = document.getElementById("memberList");
             const tr = table.getElementsByTagName("tr");
-
             for (let i = 0; i < tr.length; i++) {
                 const text = tr[i].textContent || tr[i].innerText;
-                if (text.toLowerCase().indexOf(filter) > -1) {
-                    tr[i].style.display = "";
-                } else {
-                    tr[i].style.display = "none";
-                }
+                tr[i].style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
             }
         }
     </script>
 
-    <!-- FIREBASE SDKS -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // Your specific Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyCUnYdKqEfUOrXkw6EnhIjCW0VsEkkhu2k",
             authDomain: "mamu-portal.firebaseapp.com",
@@ -117,49 +119,94 @@
             measurementId: "G-GB1Q3KV2N2"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const membersCol = collection(db, "members");
 
-        // SAVE MEMBER TO CLOUD
         const form = document.getElementById('memberForm');
+        const formTitle = document.getElementById('formTitle');
+        const submitBtn = document.getElementById('submitBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const editIdInput = document.getElementById('editId');
+
+        // FORM SUBMISSION (Add or Update)
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const btn = document.getElementById('submitBtn');
-            btn.disabled = true;
-            btn.innerText = "Saving...";
+            const editId = editIdInput.value;
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Processing...";
+
+            const memberData = {
+                name: document.getElementById('name').value,
+                school: document.getElementById('school').value,
+                course: document.getElementById('course').value,
+                regNo: document.getElementById('regNo').value,
+                year: document.getElementById('year').value,
+                phone: document.getElementById('phone').value,
+            };
 
             try {
-                await addDoc(membersCol, {
-                    name: document.getElementById('name').value,
-                    school: document.getElementById('school').value,
-                    course: document.getElementById('course').value,
-                    regNo: document.getElementById('regNo').value,
-                    year: document.getElementById('year').value,
-                    phone: document.getElementById('phone').value,
-                    createdAt: Date.now()
-                });
-                form.reset();
+                if (editId) {
+                    // Update existing
+                    await updateDoc(doc(db, "members", editId), memberData);
+                    resetForm();
+                } else {
+                    // Add new
+                    memberData.createdAt = Date.now();
+                    await addDoc(membersCol, memberData);
+                    form.reset();
+                }
             } catch (err) {
-                alert("Error saving: " + err.message);
+                alert("Error: " + err.message);
             }
-            btn.disabled = false;
-            btn.innerText = "Save to Cloud";
+            submitBtn.disabled = false;
+            submitBtn.innerText = editId ? "Update Member" : "Save to Cloud";
         });
+
+        // LOAD DATA FOR EDITING
+        window.prepareEdit = (id, name, school, course, regNo, year, phone) => {
+            editIdInput.value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('school').value = school;
+            document.getElementById('course').value = course;
+            document.getElementById('regNo').value = regNo;
+            document.getElementById('year').value = year;
+            document.getElementById('phone').value = phone;
+
+            formTitle.innerText = "Edit Member Details";
+            submitBtn.innerText = "Update Member";
+            cancelBtn.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        cancelBtn.onclick = resetForm;
+
+        function resetForm() {
+            form.reset();
+            editIdInput.value = "";
+            formTitle.innerText = "Register Student";
+            submitBtn.innerText = "Save to Cloud";
+            cancelBtn.classList.add('hidden');
+        }
 
         // LISTEN FOR REAL-TIME UPDATES
         const q = query(membersCol, orderBy("createdAt", "desc"));
         onSnapshot(q, (snapshot) => {
             const memberList = document.getElementById('memberList');
             memberList.innerHTML = '';
-            snapshot.forEach((doc) => {
-                const m = doc.data();
+            snapshot.forEach((fbDoc) => {
+                const m = fbDoc.data();
+                const id = fbDoc.id;
                 memberList.innerHTML += `
                     <tr class="hover:bg-gray-50 transition-colors">
                         <td class="px-6 py-4 font-bold text-emerald-900">${m.name}<br><span class="text-xs font-normal text-gray-400">${m.regNo}</span></td>
                         <td class="px-6 py-4">${m.school}<br><span class="text-xs text-emerald-600 font-semibold">${m.course} (${m.year})</span></td>
-                        <td class="px-6 py-4"><a href="tel:${m.phone}" class="text-emerald-700 font-bold hover:underline">${m.phone}</a></td>
+                        <td class="px-6 py-4">
+                            <button onclick="prepareEdit('${id}', '${m.name}', '${m.school}', '${m.course}', '${m.regNo}', '${m.year}', '${m.phone}')" 
+                                    class="text-xs bg-emerald-100 text-emerald-700 px-3 py-1 rounded-lg font-bold hover:bg-emerald-200">
+                                Edit
+                            </button>
+                        </td>
                     </tr>
                 `;
             });
