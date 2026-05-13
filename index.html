@@ -3,112 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAMU | Muslim Association of Meru University</title>
+    <title>MAMU | Member Directory</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; }
-        .islamic-green { background-color: #009150; }
-        .islamic-green-dark { background-color: #006b3c; }
-        .text-islamic { color: #009150; }
+        body { font-family: 'Poppins', sans-serif; background-color: #f0fdf4; }
+        .theme-gradient { background: linear-gradient(135deg, #059669 0%, #10b981 100%); }
+        .gold-accent { color: #d4af37; }
+        .border-gold { border-color: #d4af37; }
+        .btn-islamic { background-color: #059669; transition: all 0.3s ease; }
+        .btn-islamic:hover { background-color: #047857; transform: translateY(-1px); }
     </style>
 </head>
-<body class="bg-gray-50">
+<body>
 
-    <!-- Header / Hero Section -->
-    <header class="islamic-green text-white py-12 shadow-lg">
-        <div class="container mx-auto text-center px-4">
-            <h1 class="text-4xl md:text-5xl font-bold mb-2">Muslim Association of Meru University</h1>
-            <p class="text-xl opacity-90">(MAMU) - Unity in Faith and Knowledge</p>
+    <!-- Header -->
+    <header class="theme-gradient text-white py-16 shadow-xl relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4 opacity-10">
+            <svg width="200" height="200" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71z"/></svg>
+        </div>
+        <div class="container mx-auto text-center px-4 relative z-10">
+            <h1 class="text-4xl md:text-6xl font-extrabold mb-4 tracking-tight text-white">MAMU</h1>
+            <p class="text-xl md:text-2xl font-light text-emerald-50">Muslim Association of Meru University</p>
+            <div class="w-24 h-1 bg-yellow-400 mx-auto mt-6 rounded-full"></div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 py-10">
+    <main class="container mx-auto px-4 -mt-10 pb-20">
         
-        <!-- Registration Form -->
-        <section class="max-w-2xl mx-auto bg-white rounded-xl shadow-md overflow-hidden mb-12">
-            <div class="islamic-green-dark py-4 px-6">
-                <h2 class="text-white text-xl font-semibold">Member Registration</h2>
+        <!-- Registration Form Card -->
+        <section class="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden border border-emerald-100">
+            <div class="bg-emerald-800 py-4 px-8 flex items-center justify-between">
+                <h2 class="text-white text-xl font-semibold flex items-center gap-2">
+                    <span>✨</span> Member Registration
+                </h2>
+                <span class="text-emerald-200 text-xs uppercase tracking-widest font-bold">New Entry</span>
             </div>
-            <form id="memberForm" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Full Name</label>
-                    <input type="text" id="name" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500">
+            
+            <form id="memberForm" class="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-emerald-900">Full Name</label>
+                    <input type="text" id="name" required placeholder="Enter full name" class="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-emerald-500 outline-none transition-all">
                 </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">School</label>
-                    <input type="text" id="school" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500">
-                </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Course</label>
-                    <input type="text" id="course" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Reg Number</label>
-                    <input type="text" id="regNo" required class="mt-1 block w-full border border-gray-300 rounded-md p-2 focus:ring-green-500 focus:border-green-500">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700">Year of Study</label>
-                    <select id="year" class="mt-1 block w-full border border-gray-300 rounded-md p-2">
-                        <option>Year 1</option>
-                        <option>Year 2</option>
-                        <option>Year 3</option>
-                        <option>Year 4</option>
+
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-emerald-900">School</label>
+                    <select id="school" required class="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-emerald-500 outline-none bg-white">
+                        <option value="">Select School</option>
+                        <option>School of Agriculture and Food Science</option>
+                        <option>School of Business and Economics</option>
+                        <option>School of Computing and Informatics</option>
+                        <option>School of Education</option>
+                        <option>School of Engineering and Architecture</option>
+                        <option>School of Health Sciences</option>
+                        <option>School of Nursing</option>
+                        <option>School of Pure and Applied Sciences</option>
                     </select>
                 </div>
-                <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700">Phone Number</label>
-                    <input type="tel" id="phone" required class="mt-1 block w-full border border-gray-300 rounded-md p-2">
+
+                <div class="space-y-1">
+                    <label class="text-sm font-semibold text-emerald-900">Course Studied</label>
+                    <input type="text" id="course" required placeholder="e.g. Bsc. Computer Science" class="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-emerald-500 outline-none">
                 </div>
-                <div class="md:col-span-2 mt-2">
-                    <button type="submit" class="w-full islamic-green hover:islamic-green-dark text-white font-bold py-3 rounded-lg transition duration-300">
-                        Register Member
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="space-y-1">
+                        <label class="text-sm font-semibold text-emerald-900">Reg Number</label>
+                        <input type="text" id="regNo" required placeholder="CT101/..." class="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-emerald-500 outline-none">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-sm font-semibold text-emerald-900">Year</label>
+                        <select id="year" class="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-emerald-500 outline-none bg-white">
+                            <option>Year 1</option>
+                            <option>Year 2</option>
+                            <option>Year 3</option>
+                            <option>Year 4</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="md:col-span-2 space-y-1">
+                    <label class="text-sm font-semibold text-emerald-900">Phone Number</label>
+                    <input type="tel" id="phone" required placeholder="0712 345 678" class="w-full border-2 border-gray-100 rounded-xl p-3 focus:border-emerald-500 outline-none">
+                </div>
+
+                <div class="md:col-span-2 pt-4">
+                    <button type="submit" class="w-full btn-islamic text-white font-bold py-4 rounded-xl shadow-lg flex items-center justify-center gap-2">
+                        Register to MAMU
                     </button>
                 </div>
             </form>
         </section>
 
-        <!-- Registered Members List -->
-        <section class="bg-white rounded-xl shadow-md overflow-hidden">
-            <div class="bg-gray-800 py-4 px-6 flex justify-between items-center">
-                <h2 class="text-white text-xl font-semibold">Registered Members List</h2>
-                <button onclick="clearList()" class="text-xs bg-red-600 text-white px-2 py-1 rounded">Clear All</button>
+        <!-- Search & Table Section -->
+        <section class="mt-16 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+            <div class="p-6 bg-gray-50 border-b border-gray-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-emerald-900">Member Directory</h2>
+                    <p class="text-sm text-gray-500">Search by Name, School, Course, or Year</p>
+                </div>
+                <div class="relative">
+                    <input type="text" id="searchInput" onkeyup="filterMembers()" placeholder="Search members..." class="pl-10 pr-4 py-3 border-2 border-emerald-100 rounded-full w-full md:w-80 focus:border-emerald-500 outline-none shadow-sm">
+                    <span class="absolute left-3 top-3.5 text-emerald-400">🔍</span>
+                </div>
             </div>
+
             <div class="overflow-x-auto">
-                <table class="min-w-full leading-normal">
+                <table class="w-full text-left border-collapse">
                     <thead>
-                        <tr class="bg-gray-100 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                            <th class="px-5 py-3 border-b-2">Name</th>
-                            <th class="px-5 py-3 border-b-2">School/Course</th>
-                            <th class="px-5 py-3 border-b-2">Reg No</th>
-                            <th class="px-5 py-3 border-b-2">Year</th>
-                            <th class="px-5 py-3 border-b-2">Phone</th>
+                        <tr class="bg-emerald-50 text-emerald-800 uppercase text-xs font-bold tracking-widest">
+                            <th class="px-8 py-4">Student Details</th>
+                            <th class="px-6 py-4">Academic Info</th>
+                            <th class="px-6 py-4">Reg No</th>
+                            <th class="px-6 py-4">Contact</th>
                         </tr>
                     </thead>
-                    <tbody id="memberList">
-                        <!-- Data will appear here -->
+                    <tbody id="memberList" class="divide-y divide-gray-100">
+                        <!-- Rows injected by JS -->
                     </tbody>
                 </table>
             </div>
+            <div id="noResults" class="hidden p-10 text-center text-gray-400 italic">No members found matching your search.</div>
         </section>
 
     </main>
 
-    <footer class="text-center py-10 text-gray-500 text-sm">
-        &copy; 2024 MAMU - Meru University of Science and Technology.
-    </footer>
-
     <script>
         const form = document.getElementById('memberForm');
         const memberList = document.getElementById('memberList');
+        const noResults = document.getElementById('noResults');
 
-        // Load data on start
         document.addEventListener('DOMContentLoaded', displayMembers);
 
         form.addEventListener('submit', (e) => {
             e.preventDefault();
-            
             const member = {
+                id: Date.now(),
                 name: document.getElementById('name').value,
                 school: document.getElementById('school').value,
                 course: document.getElementById('course').value,
@@ -116,52 +146,65 @@
                 year: document.getElementById('year').value,
                 phone: document.getElementById('phone').value
             };
-
             saveMember(member);
             form.reset();
             displayMembers();
         });
 
         function saveMember(member) {
-            let members = localStorage.getItem('mamuMembers') ? JSON.parse(localStorage.getItem('mamuMembers')) : [];
-            members.push(member);
-            localStorage.setItem('mamuMembers', JSON.stringify(members));
+            let members = JSON.parse(localStorage.getItem('mamuV2') || '[]');
+            members.unshift(member); // Add new member to top
+            localStorage.setItem('mamuV2', JSON.stringify(members));
         }
 
         function displayMembers() {
-            let members = localStorage.getItem('mamuMembers') ? JSON.parse(localStorage.getItem('mamuMembers')) : [];
-            memberList.innerHTML = '';
+            let members = JSON.parse(localStorage.getItem('mamuV2') || '[]');
+            renderTable(members);
+        }
 
-            members.forEach(m => {
-                const row = `
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                            <p class="text-gray-900 font-bold">${m.name}</p>
+        function renderTable(data) {
+            memberList.innerHTML = '';
+            if (data.length === 0) {
+                noResults.classList.remove('hidden');
+                return;
+            }
+            noResults.classList.add('hidden');
+
+            data.forEach(m => {
+                memberList.innerHTML += `
+                    <tr class="hover:bg-emerald-50/50 transition-colors">
+                        <td class="px-8 py-5">
+                            <div class="font-bold text-gray-800">${m.name}</div>
+                            <div class="text-xs text-emerald-600 font-medium">${m.year}</div>
                         </td>
-                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                            <p class="text-gray-900">${m.school}</p>
-                            <p class="text-gray-500 text-xs">${m.course}</p>
+                        <td class="px-6 py-5">
+                            <div class="text-sm font-semibold text-gray-700">${m.school}</div>
+                            <div class="text-xs text-gray-500">${m.course}</div>
                         </td>
-                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                            <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs font-semibold">${m.regNo}</span>
+                        <td class="px-6 py-5">
+                            <span class="bg-gray-100 text-gray-600 px-3 py-1 rounded-lg text-xs font-mono font-bold">${m.regNo}</span>
                         </td>
-                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                            <p class="text-gray-900">${m.year}</p>
-                        </td>
-                        <td class="px-5 py-4 border-b border-gray-200 text-sm">
-                            <p class="text-gray-900">${m.phone}</p>
+                        <td class="px-6 py-5">
+                            <a href="tel:${m.phone}" class="text-emerald-600 hover:underline text-sm font-medium">${m.phone}</a>
                         </td>
                     </tr>
                 `;
-                memberList.innerHTML += row;
             });
         }
 
-        function clearList() {
-            if(confirm("Are you sure you want to delete all members?")) {
-                localStorage.removeItem('mamuMembers');
-                displayMembers();
-            }
+        function filterMembers() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            let members = JSON.parse(localStorage.getItem('mamuV2') || '[]');
+            
+            const filtered = members.filter(m => 
+                m.name.toLowerCase().includes(query) ||
+                m.school.toLowerCase().includes(query) ||
+                m.course.toLowerCase().includes(query) ||
+                m.year.toLowerCase().includes(query) ||
+                m.regNo.toLowerCase().includes(query)
+            );
+            
+            renderTable(filtered);
         }
     </script>
 </body>
