@@ -75,7 +75,7 @@
                 </div>
             </section>
 
-            <!-- Live Directory Grouped by Year -->
+            <!-- Live Directory Grouped by Year & Alumni -->
             <section class="lg:col-span-2">
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div class="p-4 bg-emerald-50 border-b flex justify-between items-center">
@@ -96,7 +96,7 @@
                                 </tr>
                             </thead>
                             <tbody id="memberList" class="divide-y divide-gray-100 text-sm">
-                                <!-- Grouped student data will appear here -->
+                                <!-- Grouped student and alumni data will appear here -->
                             </tbody>
                         </table>
                     </div>
@@ -204,7 +204,8 @@
             const allData = [];
             snapshot.forEach(doc => allData.push({ id: doc.id, ...doc.data() }));
 
-            const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4"];
+            // Added "Alumni" to the grouping array
+            const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
 
             yearGroups.forEach(currentYear => {
                 const students = allData
@@ -212,10 +213,11 @@
                     .sort((a, b) => a.name.localeCompare(b.name));
 
                 if (students.length > 0) {
+                    // This section creates the header row for each group, including Alumni
                     memberList.innerHTML += `
                         <tr class="bg-emerald-50/80 border-y border-emerald-100">
                             <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
-                                ${currentYear} <span class="ml-2 font-medium text-emerald-400">| ${students.length} Students</span>
+                                ${currentYear} <span class="ml-2 font-medium text-emerald-400">| ${students.length} ${currentYear === 'Alumni' ? 'Members' : 'Students'}</span>
                             </td>
                         </tr>
                     `;
