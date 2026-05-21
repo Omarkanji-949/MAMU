@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAMU | Muslim Association of Meru University</title>
+    <title>MAMU | MUslim Association of Meru University</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -112,8 +112,6 @@
             const table = document.getElementById("memberList");
             const tr = table.getElementsByTagName("tr");
             for (let i = 0; i < tr.length; i++) {
-                // Skips filtering group header rows safely
-                if(tr[i].classList.contains('group-header')) continue;
                 const text = tr[i].textContent || tr[i].innerText;
                 tr[i].style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
             }
@@ -122,7 +120,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCUnYdKqEfUOrXkw6EnhIjCW0VsEkkhu2k",
@@ -143,6 +141,9 @@
         const submitBtn = document.getElementById('submitBtn');
         const cancelBtn = document.getElementById('cancelBtn');
         const editIdInput = document.getElementById('editId');
+
+        // PLACE YOUR ACTUAL WHATSAPP GROUP INVITE LINK HERE
+        const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/YOUR_GROUP_INVITE_CODE";
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -175,31 +176,19 @@
             submitBtn.innerText = editId ? "Update Member" : "Save to Cloud";
         });
 
-        // Safe Edit Trigger using data attributes to avoid escaping string bugs
-        window.prepareEdit = (el) => {
-            editIdInput.value = el.dataset.id;
-            document.getElementById('name').value = el.dataset.name;
-            document.getElementById('school').value = el.dataset.school;
-            document.getElementById('course').value = el.dataset.course;
-            document.getElementById('regNo').value = el.dataset.regno;
-            document.getElementById('year').value = el.dataset.year;
-            document.getElementById('phone').value = el.dataset.phone;
+        window.prepareEdit = (id, name, school, course, regNo, year, phone) => {
+            editIdInput.value = id;
+            document.getElementById('name').value = name;
+            document.getElementById('school').value = school;
+            document.getElementById('course').value = course;
+            document.getElementById('regNo').value = regNo;
+            document.getElementById('year').value = year;
+            document.getElementById('phone').value = phone;
 
             formTitle.innerText = "Editing Record";
             submitBtn.innerText = "Update Member";
             cancelBtn.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
-        };
-
-        // Added dynamic Delete handler
-        window.deleteMember = async (id, name) => {
-            if (confirm(`Are you sure you want to delete ${name}'s record?`)) {
-                try {
-                    await deleteDoc(doc(db, "members", id));
-                } catch (err) {
-                    alert("Error deleting record: " + err.message);
-                }
-            }
         };
 
         cancelBtn.onclick = resetFormState;
@@ -210,6 +199,15 @@
             formTitle.innerText = "Register Student";
             submitBtn.innerText = "Save to Cloud";
             cancelBtn.classList.add('hidden');
+        }
+
+        // Helper function to clean phone numbers into international format
+        function formatWhatsAppNumber(phoneStr) {
+            let cleaned = phoneStr.replace(/\D/g, ''); // strip spaces/symbols
+            if (cleaned.startsWith('0')) {
+                cleaned = '254' + cleaned.substring(1); // Auto-add Kenyan country code if it starts with 0
+            }
+            return cleaned;
         }
 
         onSnapshot(membersCol, (snapshot) => {
@@ -227,7 +225,7 @@
 
                 if (students.length > 0) {
                     memberList.innerHTML += `
-                        <tr class="group-header bg-emerald-50/80 border-y border-emerald-100">
+                        <tr class="bg-emerald-50/80 border-y border-emerald-100">
                             <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
                                 ${currentYear} <span class="ml-2 font-medium text-emerald-400">| ${students.length} ${currentYear === 'Alumni' ? 'Members' : 'Students'}</span>
                             </td>
@@ -235,38 +233,41 @@
                     `;
 
                     students.forEach(m => {
-                        const tr = document.createElement('tr');
-                        tr.className = "hover:bg-gray-50/80 transition-colors";
-                        tr.innerHTML = `
-                            <td class="px-6 py-4">
-                                <div class="font-bold text-emerald-900">${m.name}</div>
-                                <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
-                                <div class="text-sm text-emerald-600">${m.course}</div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <a href="tel:${m.phone}" class="text-emerald-700 font-bold hover:underline transition-all">
-                                    ${m.phone}
-                                </a>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <div class="flex items-center justify-center gap-2">
-                                    <button onclick="prepareEdit(this)" 
-                                            data-id="${m.id}" data-name="${m.name}" data-school="${m.school}" 
-                                            data-course="${m.course}" data-regno="${m.regNo}" data-year="${m.year}" data-phone="${m.phone}"
+                        // Create tailored WhatsApp message body
+                        const rawPhone = formatWhatsAppNumber(m.phone);
+                        const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to the Muslim Association of Meru University (MAMU). Please join our official community group using this link:\n\n${WHATSAPP_GROUP_LINK}`);
+                        const waUrl = `https://wa.me/${rawPhone}?text=${messageText}`;
+
+                        memberList.innerHTML += `
+                            <tr class="hover:bg-gray-50/80 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-emerald-900">${m.name}</div>
+                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
+                                    <div class="text-sm text-emerald-600">${m.course}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-2">
+                                        <a href="tel:${m.phone}" class="text-emerald-700 font-bold hover:underline transition-all">
+                                            ${m.phone}
+                                        </a>
+                                        <a href="${waUrl}" target="_blank" title="Invite to WhatsApp Group" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 rounded-full p-1 transition-all flex items-center justify-center" style="width: 24px; height: 24px;">
+                                            <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
+                                                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397 0 11.948 0c3.179.001 6.165 1.239 8.413 3.488 2.247 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.906-11.89 11.906-2.016-.002-4.004-.511-5.775-1.482L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.725 1.451 5.405.002 9.808-4.337 9.811-9.671.002-2.584-1.002-5.015-2.831-6.844-1.828-1.827-4.255-2.83-6.837-2.83-5.41 0-9.81 4.34-9.815 9.675-.001 1.67.443 3.305 1.288 4.715l-.992 3.626 3.71-.973zm11.233-5.18c-.3-.149-1.772-.874-2.046-.974-.274-.1-.474-.149-.674.149-.2.3-.773.974-.948 1.173-.175.2-.35.225-.65.075-.3-.15-1.266-.467-2.41-1.487-.89-.794-1.49-1.774-1.665-2.074-.175-.3-.019-.462.13-.611.135-.134.3-.35.45-.524.15-.175.2-.3.3-.5.1-.2.05-.375-.025-.525-.075-.15-.674-1.623-.924-2.223-.244-.588-.492-.51-.674-.519-.174-.009-.374-.01-.574-.01-.2 0-.524.075-.798.374-.275.3-1.047 1.024-1.047 2.497 0 1.472 1.073 2.893 1.223 3.092.149.2 2.11 3.22 5.11 4.516.714.308 1.272.493 1.706.63.717.228 1.37.196 1.885.119.574-.086 1.772-.724 2.022-1.422.25-.699.25-1.297.175-1.422-.075-.125-.275-.199-.575-.349z"/>
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <button onclick="prepareEdit('${m.id}', '${m.name}', '${m.school}', '${m.course}', '${m.regNo}', '${m.year}', '${m.phone}')" 
                                             class="text-[10px] font-bold bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
                                         EDIT
                                     </button>
-                                    <button onclick="deleteMember('${m.id}', '${m.name.replace(/'/g, "\\'")}')"
-                                            class="text-[10px] font-bold bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm">
-                                        DELETE
-                                    </button>
-                                </div>
-                            </td>
+                                </td>
+                            </tr>
                         `;
-                        memberList.appendChild(tr);
                     });
                 }
             });
