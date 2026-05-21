@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MAMU | MUslim Association of Meru University</title>
+    <title>MAMU | Muslim Association of Meru University</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
@@ -112,6 +112,8 @@
             const table = document.getElementById("memberList");
             const tr = table.getElementsByTagName("tr");
             for (let i = 0; i < tr.length; i++) {
+                // Skips filtering group header rows safely
+                if(tr[i].classList.contains('group-header')) continue;
                 const text = tr[i].textContent || tr[i].innerText;
                 tr[i].style.display = text.toLowerCase().indexOf(filter) > -1 ? "" : "none";
             }
@@ -120,7 +122,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCUnYdKqEfUOrXkw6EnhIjCW0VsEkkhu2k",
@@ -173,19 +175,31 @@
             submitBtn.innerText = editId ? "Update Member" : "Save to Cloud";
         });
 
-        window.prepareEdit = (id, name, school, course, regNo, year, phone) => {
-            editIdInput.value = id;
-            document.getElementById('name').value = name;
-            document.getElementById('school').value = school;
-            document.getElementById('course').value = course;
-            document.getElementById('regNo').value = regNo;
-            document.getElementById('year').value = year;
-            document.getElementById('phone').value = phone;
+        // Safe Edit Trigger using data attributes to avoid escaping string bugs
+        window.prepareEdit = (el) => {
+            editIdInput.value = el.dataset.id;
+            document.getElementById('name').value = el.dataset.name;
+            document.getElementById('school').value = el.dataset.school;
+            document.getElementById('course').value = el.dataset.course;
+            document.getElementById('regNo').value = el.dataset.regno;
+            document.getElementById('year').value = el.dataset.year;
+            document.getElementById('phone').value = el.dataset.phone;
 
             formTitle.innerText = "Editing Record";
             submitBtn.innerText = "Update Member";
             cancelBtn.classList.remove('hidden');
             window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // Added dynamic Delete handler
+        window.deleteMember = async (id, name) => {
+            if (confirm(`Are you sure you want to delete ${name}'s record?`)) {
+                try {
+                    await deleteDoc(doc(db, "members", id));
+                } catch (err) {
+                    alert("Error deleting record: " + err.message);
+                }
+            }
         };
 
         cancelBtn.onclick = resetFormState;
@@ -204,7 +218,6 @@
             const allData = [];
             snapshot.forEach(doc => allData.push({ id: doc.id, ...doc.data() }));
 
-            // Added "Alumni" to the grouping array
             const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
 
             yearGroups.forEach(currentYear => {
@@ -213,9 +226,8 @@
                     .sort((a, b) => a.name.localeCompare(b.name));
 
                 if (students.length > 0) {
-                    // This section creates the header row for each group, including Alumni
                     memberList.innerHTML += `
-                        <tr class="bg-emerald-50/80 border-y border-emerald-100">
+                        <tr class="group-header bg-emerald-50/80 border-y border-emerald-100">
                             <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
                                 ${currentYear} <span class="ml-2 font-medium text-emerald-400">| ${students.length} ${currentYear === 'Alumni' ? 'Members' : 'Students'}</span>
                             </td>
@@ -223,29 +235,38 @@
                     `;
 
                     students.forEach(m => {
-                        memberList.innerHTML += `
-                            <tr class="hover:bg-gray-50/80 transition-colors">
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-emerald-900">${m.name}</div>
-                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
-                                    <div class="text-sm text-emerald-600">${m.course}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <a href="tel:${m.phone}" class="text-emerald-700 font-bold hover:underline transition-all">
-                                        ${m.phone}
-                                    </a>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <button onclick="prepareEdit('${m.id}', '${m.name}', '${m.school}', '${m.course}', '${m.regNo}', '${m.year}', '${m.phone}')" 
+                        const tr = document.createElement('tr');
+                        tr.className = "hover:bg-gray-50/80 transition-colors";
+                        tr.innerHTML = `
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-emerald-900">${m.name}</div>
+                                <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
+                                <div class="text-sm text-emerald-600">${m.course}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <a href="tel:${m.phone}" class="text-emerald-700 font-bold hover:underline transition-all">
+                                    ${m.phone}
+                                </a>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <div class="flex items-center justify-center gap-2">
+                                    <button onclick="prepareEdit(this)" 
+                                            data-id="${m.id}" data-name="${m.name}" data-school="${m.school}" 
+                                            data-course="${m.course}" data-regno="${m.regNo}" data-year="${m.year}" data-phone="${m.phone}"
                                             class="text-[10px] font-bold bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
                                         EDIT
                                     </button>
-                                </td>
-                            </tr>
+                                    <button onclick="deleteMember('${m.id}', '${m.name.replace(/'/g, "\\'")}')"
+                                            class="text-[10px] font-bold bg-white border border-red-200 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-600 hover:text-white transition-all shadow-sm">
+                                        DELETE
+                                    </button>
+                                </div>
+                            </td>
                         `;
+                        memberList.appendChild(tr);
                     });
                 }
             });
