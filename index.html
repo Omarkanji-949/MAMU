@@ -212,12 +212,15 @@
             submitBtn.innerText = "Save to Google Sheets";
         });
 
-        async function loadMembers() {
+        async function loadMembers(
+            const members = await response.json();
+        )
+        console.log("Members loaded:", members);{
            try {
 
     console.log("Sending:", memberData);
 
-    const response = await fetch(SCRIPT_URL, {
+    const response = await fetch(https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec, {
         method: "POST",
         mode: "cors",
         headers: {
@@ -241,9 +244,14 @@ memberList.innerHTML = "";
 
                 yearGroups.forEach(year => {
 
-                    const students = members.filter(student => {
-    const y = String(student.year).trim();
+                   const students = members.filter(student => {
+    const memberYear = String(student.year).trim();
 
+    return (
+        memberYear === year ||
+        memberYear === year.replace("Year ", "")
+    );
+});
     return (
         y === year ||
         y === year.replace("Year ", "")
