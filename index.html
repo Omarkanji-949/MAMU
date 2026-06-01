@@ -175,14 +175,15 @@
             submitBtn.innerText = "Saving...";
 
             const memberData = {
-                name: document.getElementById("name").value,
-                regNo: document.getElementById("regNo").value,
-                school: document.getElementById("school").value,
-                course: document.getElementById("course").value,
-                year: document.getElementById("year").value,
-                phone: document.getElementById("phone").value
-            };
+    name: document.getElementById("name").value,
+    regNo: document.getElementById("regNo").value,
+    school: document.getElementById("school").value,
+    course: document.getElementById("course").value,
+    year: document.getElementById("year").value,
+    phone: document.getElementById("phone").value
+};
 
+console.log("Sending:", memberData);
             try {
                const response = await fetch(SCRIPT_URL, {
     method: "POST",
@@ -211,56 +212,38 @@
             submitBtn.disabled = false;
             submitBtn.innerText = "Save to Google Sheets";
         });
+async function loadMembers() {
+    try {
 
-        async function loadMembers(
-            const members = await response.json();
-        )
-        console.log("Members loaded:", members);{
-           try {
+        const response = await fetch(SCRIPT_URL);
+        const members = await response.json();
 
-    console.log("Sending:", memberData);
+        console.log("Members loaded:", members);
 
-    const response = await fetch(https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec, {
-        method: "POST",
-        mode: "cors",
-        headers: {
-            "Content-Type": "text/plain;charset=utf-8"
-        },
-        body: JSON.stringify(memberData)
-    });
+        memberList.innerHTML = "";
 
-    const members = await response.json();
+        const yearGroups = [
+            "Year 1",
+            "Year 2",
+            "Year 3",
+            "Year 4",
+            "Alumni"
+        ];
 
-console.log("Members loaded:", members);
+        yearGroups.forEach(year => {
 
-memberList.innerHTML = "";
-                const yearGroups = [
-                    "Year 1",
-                    "Year 2",
-                    "Year 3",
-                    "Year 4",
-                    "Alumni"
-                ];
+            const students = members.filter(student => {
+                const memberYear = String(student.year).trim();
 
-                yearGroups.forEach(year => {
+                return (
+                    memberYear === year ||
+                    memberYear === year.replace("Year ", "")
+                );
+            });
 
-                   const students = members.filter(student => {
-    const memberYear = String(student.year).trim();
+            if (!students.length) return;
 
-    return (
-        memberYear === year ||
-        memberYear === year.replace("Year ", "")
-    );
-});
-    return (
-        y === year ||
-        y === year.replace("Year ", "")
-    );
-});
-
-                    if (!students.length) return;
-
-                    memberList.innerHTML += `
+            memberList.innerHTML += `
                 <tr class="bg-emerald-50/80 border-y border-emerald-100">
                     <td colspan="4"
                         class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
@@ -272,24 +255,23 @@ memberList.innerHTML = "";
                 </tr>
             `;
 
-                    students.forEach(m => {
+            students.forEach(m => {
 
-                        const waPhone = formatWhatsAppNumber(m.phone);
+                const waPhone = formatWhatsAppNumber(m.phone);
 
-                        const messageText = encodeURIComponent(
-                            `Assalam Alaykum ${m.name},
+                const messageText = encodeURIComponent(
+`Assalam Alaykum ${m.name},
 
 Welcome to MAMU.
 
 Join our WhatsApp group:
 
 ${WHATSAPP_GROUP_LINK}`
-                        );
+                );
 
-                        const waUrl =
-                            `https://wa.me/${waPhone}?text=${messageText}`;
+                const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
 
-                        memberList.innerHTML += `
+                memberList.innerHTML += `
                     <tr class="hover:bg-gray-50">
 
                         <td class="px-6 py-4">
@@ -336,15 +318,15 @@ ${WHATSAPP_GROUP_LINK}`
 
                     </tr>
                 `;
-                    });
-                });
+            });
+        });
 
-            } catch (error) {
-                console.error("Load error:", error);
-            }
-        }
+    } catch (error) {
+        console.error("Load error:", error);
+    }
+}
 
-        loadMembers();
+loadMembers();
     </script>
 </body>
 
