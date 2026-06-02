@@ -224,26 +224,74 @@
             submitBtn.innerText = "Save to Google Sheets";
             cancelBtn.classList.add('hidden');
         }
+function doPost(e) {
+  var lock = LockService.getScriptLock();
+  lock.tryLock(10000);
+  
+  try {
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    var data = JSON.parse(e.postData.contents);
+    
+    var rows = sheet.getDataRange().getValues();
+    var targetRow = -1;
+    
+    // Look for an existing student with the same Registration Number to update them
+    for (var i = 1; i < rows.length; i++) {
+      if (String(rows[i][2]).trim().toLowerCase() === String(data.regNo).trim().toLowerCase()) {
+        targetRow = i + 1; // Found them! (Plus 1 for 1-based indexing)
+        break;
+      }
+    }
+    
+    var timestamp = new Date();
+    
+    if (targetRow !== -1) {
+      // OVERWRITE EXISTING MEMBER (No Duplicates)
+      sheet.getCell(targetRow, 1).setValue(timestamp);
+      sheet.getCell(targetRow, 2).setValue(data.name);
+      sheet.getCell(targetRow, 3).setValue(data.regNo);
+      sheet.getCell(targetRow, 4).setValue(data.school);
+      sheet.getCell(targetRow, 5).setValue(data.course);
+      sheet.getCell(targetRow, 6).setValue(data.year);
+      sheet.getCell(targetRow, 7).setValue(data.phone);
+    } else {
+      // APPEND BRAND NEW MEMBER
+      sheet.appendRow([timestamp, data.name, data.regNo, data.school, data.course, data.year, data.phone]);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({"status": "success"}))
+                         .setMimeType(ContentService.MimeType.JSON);
+  } catch (error) {
+    return ContentService.createTextOutput(JSON.stringify({"status": "error", "message": error.toString()}))
+                         .setMimeType(ContentService.MimeType.JSON);
+  } finally {
+    lock.releaseLock();
+  }
+}
 
-        form.addEventListener("submit", async(e) => {
-            e.preventDefault();
-
-            const inputRegNo = document.getElementById("regNo").value.trim();
-            const editId = editIdInput.value;
-
-            if (!editId) {
-                const isDuplicate = loadedMembersCache.some(student => 
-                    String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
-                );
-
-                if (isDuplicate) {
-                    alert("Registration Error: A student with this Registration Number is already registered!");
-                    return;
-                }
-            }
-
-            submitBtn.disabled = true;
-            submitBtn.innerText = "Saving...";
+function doGet() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var rows = sheet.getDataRange().getValues();
+  var members = [];
+  
+  for (var i = 1; i < rows.length; i++) {
+    var row = rows[i];
+    if (!row[1]) continue; 
+    
+    members.push({
+      id: "row_" + (i + 1), 
+      name: row[1],
+      regNo: row[2],
+      school: row[3],
+      course: row[4],
+      year: row[5],
+      phone: String(row[6])
+    });
+  }
+  
+  return ContentService.createTextOutput(JSON.stringify(members))
+                       .setMimeType(ContentService.MimeType.JSON);
+}
 
             const memberData = {
                 id: editId || "id_" + Date.now(), 
@@ -373,26 +421,28 @@
             }
         }
 
-        function loadMembers() {
-            // 1. Instantly pull whatever data is saved locally from last time so the screen is NEVER blank on refresh
-            const preservedData = JSON.parse(localStorage.getItem("mamu_stored_members")) || [];
-            if (preservedData.length > 0) {
-                renderTableRows(preservedData);
-            }
+async function loadMembers() {
+    try {
+        // Fetch fresh data dynamically straight from your Google Sheet rows
+        const response = await fetch(SCRIPT_URL);
+        const cloudMembers = await response.json();
 
-            // 2. Reach out to Google Sheets in the background to grab the live master-copy list
-            fetch(SCRIPT_URL)
-                .then(response => response.json())
-                .then(cloudMembers => {
-                    if (Array.isArray(cloudMembers) && cloudMembers.length > 0) {
-                        // Overwrite local copy with Google Sheets' authoritative rows and update dashboard layout
-                        localStorage.setItem("mamu_stored_members", JSON.stringify(cloudMembers));
-                        renderTableRows(cloudMembers);
-                    }
-                })
-                .catch(error => console.log("Offline or sheet loading background script error, keeping cached local database rendering active."));
+        if (Array.isArray(cloudMembers)) {
+            // Keep a temporary cache in memory for the edit function, then render
+            loadedMembersCache = cloudMembers;
+            renderTableRows(cloudMembers);
         }
-
+    } catch (error) {
+        console.error("Error loading names from Google Sheets:", error);
+        memberList.innerHTML = `
+            <tr>
+                <td colspan="4" class="px-6 py-8 text-center text-gray-400 italic">
+                    Unable to load directory rows. Please check your internet connection.
+                </td>
+            </tr>
+        `;
+    }
+}
         // Initialize dashboard instantly when page opens
         window.onload = loadMembers;
     </script>
