@@ -87,7 +87,7 @@
             <section class="lg:col-span-2">
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div class="p-4 bg-emerald-50 border-b flex justify-between items-center">
-                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search directory..." class="w-full max-w-sm p-2 border rounded-full px-4 outline-emerald-500">
+                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search by name, school, course, year..." class="w-full max-w-sm p-2 border rounded-full px-4 outline-emerald-500">
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                             <span class="text-[10px] font-black text-emerald-700 uppercase tracking-tighter">Live Sync</span>
@@ -104,7 +104,7 @@
                                 </tr>
                             </thead>
                             <tbody id="memberList" class="divide-y divide-gray-100 text-sm">
-                            </tbody>
+                                </tbody>
                         </table>
                     </div>
                 </div>
@@ -123,7 +123,6 @@
             let visibleInGroup = 0;
 
             for (let i = 0; i < tr.length; i++) {
-                // If it is a year group header row
                 if (tr[i].hasAttribute('data-group-header')) {
                     if (currentHeader && visibleInGroup === 0) {
                         currentHeader.style.display = "none";
@@ -134,7 +133,6 @@
                     continue;
                 }
 
-                // If it is a student row
                 const text = tr[i].textContent || tr[i].innerText;
                 if (text.toLowerCase().indexOf(filter) > -1) {
                     tr[i].style.display = "";
@@ -144,7 +142,6 @@
                 }
             }
 
-            // Handle the final group header segment
             if (currentHeader && visibleInGroup === 0) {
                 currentHeader.style.display = "none";
             }
@@ -154,12 +151,14 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec";
 
         const form = document.getElementById("memberForm");
+        const formTitle = document.getElementById("formTitle");
         const submitBtn = document.getElementById("submitBtn");
+        const cancelBtn = document.getElementById("cancelBtn");
+        const editIdInput = document.getElementById("editId");
         const memberList = document.getElementById("memberList");
 
         const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/YOUR_GROUP_INVITE_CODE";
         
-        // Cache variable to hold global member registrations for client-side evaluation
         let loadedMembersCache = [];
 
         function formatWhatsAppNumber(phoneStr) {
@@ -197,25 +196,54 @@
             document.body.removeChild(link);
         };
 
+        window.prepareEdit = (id, name, school, course, regNo, year, phone) => {
+            editIdInput.value = id;
+            document.getElementById("name").value = name;
+            document.getElementById("school").value = school;
+            document.getElementById("course").value = course;
+            document.getElementById("regNo").value = regNo;
+            document.getElementById("year").value = year;
+            document.getElementById("phone").value = phone;
+
+            formTitle.innerText = "Editing Record";
+            submitBtn.innerText = "Update Member";
+            cancelBtn.classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        cancelBtn.onclick = resetFormState;
+
+        function resetFormState() {
+            form.reset();
+            editIdInput.value = "";
+            formTitle.innerText = "Register Student";
+            submitBtn.innerText = "Save to Google Sheets";
+            cancelBtn.classList.add('hidden');
+        }
+
         form.addEventListener("submit", async(e) => {
             e.preventDefault();
 
             const inputRegNo = document.getElementById("regNo").value.trim();
+            const editId = editIdInput.value;
 
-            // Client-side Duplicate Check against cached active spreadsheet members
-            const isDuplicate = loadedMembersCache.some(student => 
-                String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
-            );
+            // Check duplicate registration numbers only if creating a brand new record
+            if (!editId) {
+                const isDuplicate = loadedMembersCache.some(student => 
+                    String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
+                );
 
-            if (isDuplicate) {
-                alert("Registration Error: A student with this Registration Number is already registered!");
-                return;
+                if (isDuplicate) {
+                    alert("Registration Error: A student with this Registration Number is already registered!");
+                    return;
+                }
             }
 
             submitBtn.disabled = true;
             submitBtn.innerText = "Saving...";
 
             const memberData = {
+                id: editId || "", 
                 name: document.getElementById("name").value,
                 regNo: inputRegNo,
                 school: document.getElementById("school").value,
@@ -224,7 +252,6 @@
                 phone: document.getElementById("phone").value
             };
 
-            console.log("Sending:", memberData);
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: "POST",
@@ -238,11 +265,11 @@
                 const result = await response.json();
 
                 if (result.status === "success") {
-                    alert("Student registered successfully.");
-                    form.reset();
+                    alert(editId ? "Student records updated successfully." : "Student registered successfully.");
+                    resetFormState();
                     await loadMembers();
                 } else {
-                    alert("Failed to save student.");
+                    alert("Failed to save student data.");
                 }
 
             } catch (error) {
@@ -251,7 +278,6 @@
             }
 
             submitBtn.disabled = false;
-            submitBtn.innerText = "Save to Google Sheets";
         });
 
         async function loadMembers() {
@@ -259,22 +285,10 @@
                 const response = await fetch(SCRIPT_URL);
                 const members = await response.json();
 
-                console.log("Members loaded:", members);
-                
-                // Store loaded data into memory cache for immediate submission mapping evaluations
                 loadedMembersCache = Array.isArray(members) ? members : [];
-
                 memberList.innerHTML = "";
 
-                const yearGroups = [
-                    "Year 1",
-                    "Year 2",
-                    "Year 3",
-                    "Year 4",
-                    "Alumni"
-                ];
-
-                // Reverse sequence logic so that newly appended items row references appear on top
+                const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
                 const reversedMembers = [...loadedMembersCache].reverse();
 
                 yearGroups.forEach(year => {
@@ -289,77 +303,60 @@
                     if (!students.length) return;
 
                     memberList.innerHTML += `
-                <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
-                    <td colspan="4"
-                        class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
-                        ${year}
-                        <span class="ml-2 font-medium text-emerald-400">
-                            | ${students.length}
-                        </span>
-                    </td>
-                </tr>
-            `;
+                        <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
+                            <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
+                                ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length}</span>
+                            </td>
+                        </tr>
+                    `;
 
-                    students.forEach(m => {
+                    students.forEach((m, index) => {
                         const waPhone = formatWhatsAppNumber(m.phone);
-                        const messageText = encodeURIComponent(
-                            `Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`
-                        );
+                        const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
                         const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
 
-                        // Escape quotation literals to protect downstream JS execution in template handlers
                         const safeName = String(m.name).replace(/'/g, "\\'");
                         const safePhone = String(m.phone).replace(/'/g, "\\'");
                         const safeYear = String(m.year).replace(/'/g, "\\'");
                         const safeRegNo = String(m.regNo).replace(/'/g, "\\'");
                         const safeCourse = String(m.course).replace(/'/g, "\\'");
+                        const safeSchool = String(m.school).replace(/'/g, "\\'");
+                        
+                        // Use row index or secondary id if provided by your Google Sheet script execution
+                        const uniqueId = m.id || index; 
 
                         memberList.innerHTML += `
-                    <tr class="hover:bg-gray-50">
-
-                        <td class="px-6 py-4">
-                            <div class="font-bold text-emerald-900">
-                                ${m.name}
-                            </div>
-                            <div class="text-[10px] text-gray-400 font-mono uppercase">
-                                ${m.regNo}
-                            </div>
-                        </td>
-
-                        <td class="px-6 py-4">
-                            <div class="text-xs font-semibold text-gray-500 uppercase">
-                                ${m.school}
-                            </div>
-                            <div class="text-sm text-emerald-600">
-                                ${m.course}
-                            </div>
-                        </td>
-
-                        <td class="px-6 py-4">
-                            <div class="flex gap-2">
-                                <button
-                                    onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
-                                    class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg">
-                                    Save Contact
-                                </button>
-                                <a href="${waUrl}"
-                                   target="_blank"
-                                   class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg">
-                                    Send Invite
-                                </a>
-                            </div>
-                        </td>
-
-                        <td class="px-6 py-4 text-center">
-                            ${m.year}
-                        </td>
-
-                    </tr>
-                `;
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-emerald-900">${m.name}</div>
+                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
+                                    <div class="text-sm text-emerald-600">${m.course}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex gap-2">
+                                        <button onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
+                                            class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg">
+                                            Save Contact
+                                        </button>
+                                        <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg">
+                                            Send Invite
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <button onclick="prepareEdit('${uniqueId}','${safeName}','${safeSchool}','${safeCourse}','${safeRegNo}','${safeYear}','${safePhone}')"
+                                            class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                        EDIT
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
                     });
                 });
 
-                // Re-evaluate table visibility if there is search term criteria typed
                 const currentSearch = document.getElementById("searchInput").value;
                 if(currentSearch.trim() !== "") {
                     filterTable();
@@ -370,7 +367,8 @@
             }
         }
 
-        loadMembers();
+        // Trigger loading the members immediately when the window loads
+        window.onload = loadMembers;
     </script>
 </body>
 
