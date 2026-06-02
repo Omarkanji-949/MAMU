@@ -104,7 +104,7 @@
                                 </tr>
                             </thead>
                             <tbody id="memberList" class="divide-y divide-gray-100 text-sm">
-                                </tbody>
+                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -227,7 +227,6 @@
             const inputRegNo = document.getElementById("regNo").value.trim();
             const editId = editIdInput.value;
 
-            // Check duplicate registration numbers only if creating a brand new record
             if (!editId) {
                 const isDuplicate = loadedMembersCache.some(student => 
                     String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
@@ -243,7 +242,7 @@
             submitBtn.innerText = "Saving...";
 
             const memberData = {
-                id: editId || "", 
+                id: editId || "local_" + Date.now(), 
                 name: document.getElementById("name").value,
                 regNo: inputRegNo,
                 school: document.getElementById("school").value,
@@ -251,6 +250,18 @@
                 year: document.getElementById("year").value,
                 phone: document.getElementById("phone").value
             };
+
+            // Immediately save locally so it renders right away and persists across refreshes
+            let localStore = JSON.parse(localStorage.getItem("mamu_dashboard_members")) || [];
+            if (editId) {
+                localStore = localStore.map(student => student.id === editId ? memberData : student);
+            } else {
+                localStore.push(memberData);
+            }
+            localStorage.setItem("mamu_dashboard_members", JSON.stringify(localStore));
+            
+            // Re-render display with locally stored records immediately
+            renderMembersList(localStore);
 
             try {
                 const response = await fetch(SCRIPT_URL, {
@@ -267,107 +278,119 @@
                 if (result.status === "success") {
                     alert(editId ? "Student records updated successfully." : "Student registered successfully.");
                     resetFormState();
-                    await loadMembers();
+                    await loadMembers(); // Fetches fresh data to verify against Google Sheet state
                 } else {
-                    alert("Failed to save student data.");
+                    alert("Data saved locally, but Google Sheets rejected the upload.");
                 }
 
             } catch (error) {
                 console.error(error);
-                alert("Unable to connect to Google Sheets.");
+                alert("Data saved locally. Notice: Unable to instantly sync to Google Sheets network.");
             }
 
             submitBtn.disabled = false;
         });
 
-        async function loadMembers() {
-            try {
-                const response = await fetch(SCRIPT_URL);
-                const members = await response.json();
+        function renderMembersList(membersArray) {
+            loadedMembersCache = Array.isArray(membersArray) ? membersArray : [];
+            memberList.innerHTML = "";
 
-                loadedMembersCache = Array.isArray(members) ? members : [];
-                memberList.innerHTML = "";
+            const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
+            const reversedMembers = [...loadedMembersCache].reverse();
 
-                const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
-                const reversedMembers = [...loadedMembersCache].reverse();
+            yearGroups.forEach(year => {
+                const students = reversedMembers.filter(student => {
+                    const memberYear = String(student.year).trim();
+                    return (
+                        memberYear === year ||
+                        memberYear === year.replace("Year ", "")
+                    );
+                });
 
-                yearGroups.forEach(year => {
-                    const students = reversedMembers.filter(student => {
-                        const memberYear = String(student.year).trim();
-                        return (
-                            memberYear === year ||
-                            memberYear === year.replace("Year ", "")
-                        );
-                    });
+                if (!students.length) return;
 
-                    if (!students.length) return;
+                memberList.innerHTML += `
+                    <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
+                        <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
+                            ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length}</span>
+                        </td>
+                    </tr>
+                `;
+
+                students.forEach((m, index) => {
+                    const waPhone = formatWhatsAppNumber(m.phone);
+                    const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
+                    const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
+
+                    const safeName = String(m.name).replace(/'/g, "\\'");
+                    const safePhone = String(m.phone).replace(/'/g, "\\'");
+                    const safeYear = String(m.year).replace(/'/g, "\\'");
+                    const safeRegNo = String(m.regNo).replace(/'/g, "\\'");
+                    const safeCourse = String(m.course).replace(/'/g, "\\'");
+                    const safeSchool = String(m.school).replace(/'/g, "\\'");
+                    
+                    const uniqueId = m.id || "idx_" + index; 
 
                     memberList.innerHTML += `
-                        <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
-                            <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
-                                ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length}</span>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-emerald-900">${m.name}</div>
+                                <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
+                                <div class="text-sm text-emerald-600">${m.course}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex gap-2">
+                                    <button onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
+                                        class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg">
+                                        Save Contact
+                                    </button>
+                                    <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg">
+                                        Send Invite
+                                    </a>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="prepareEdit('${uniqueId}','${safeName}','${safeSchool}','${safeCourse}','${safeRegNo}','${safeYear}','${safePhone}')"
+                                        class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                    EDIT
+                                </button>
                             </td>
                         </tr>
                     `;
-
-                    students.forEach((m, index) => {
-                        const waPhone = formatWhatsAppNumber(m.phone);
-                        const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
-                        const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
-
-                        const safeName = String(m.name).replace(/'/g, "\\'");
-                        const safePhone = String(m.phone).replace(/'/g, "\\'");
-                        const safeYear = String(m.year).replace(/'/g, "\\'");
-                        const safeRegNo = String(m.regNo).replace(/'/g, "\\'");
-                        const safeCourse = String(m.course).replace(/'/g, "\\'");
-                        const safeSchool = String(m.school).replace(/'/g, "\\'");
-                        
-                        // Use row index or secondary id if provided by your Google Sheet script execution
-                        const uniqueId = m.id || index; 
-
-                        memberList.innerHTML += `
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-emerald-900">${m.name}</div>
-                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
-                                    <div class="text-sm text-emerald-600">${m.course}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex gap-2">
-                                        <button onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
-                                            class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg">
-                                            Save Contact
-                                        </button>
-                                        <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg">
-                                            Send Invite
-                                        </a>
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <button onclick="prepareEdit('${uniqueId}','${safeName}','${safeSchool}','${safeCourse}','${safeRegNo}','${safeYear}','${safePhone}')"
-                                            class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-                                        EDIT
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    });
                 });
+            });
 
-                const currentSearch = document.getElementById("searchInput").value;
-                if(currentSearch.trim() !== "") {
-                    filterTable();
-                }
-
-            } catch (error) {
-                console.error("Load error:", error);
+            const currentSearch = document.getElementById("searchInput").value;
+            if(currentSearch.trim() !== "") {
+                filterTable();
             }
         }
 
-        // Trigger loading the members immediately when the window loads
+        async function loadMembers() {
+            // First: Load directly from LocalStorage so dashboard loads immediately without gaps
+            const initialLocalData = JSON.parse(localStorage.getItem("mamu_dashboard_members")) || [];
+            if(initialLocalData.length > 0){
+                renderMembersList(initialLocalData);
+            }
+
+            try {
+                // Second: Background sync checking Google Sheets online distribution pipeline
+                const response = await fetch(SCRIPT_URL);
+                const cloudMembers = await response.json();
+
+                if(Array.isArray(cloudMembers) && cloudMembers.length > 0) {
+                    // Update storage with authoritative rows fetched from the cloud sheet server
+                    localStorage.setItem("mamu_dashboard_members", JSON.stringify(cloudMembers));
+                    renderMembersList(cloudMembers);
+                }
+            } catch (error) {
+                console.error("Background online load sync error:", error);
+            }
+        }
+
         window.onload = loadMembers;
     </script>
 </body>
