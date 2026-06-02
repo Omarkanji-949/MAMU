@@ -161,8 +161,10 @@
         
         let loadedMembersCache = [];
 
+        // RECTIFIED: Added absolute verification to block property undefined reference runtime crashes
         function formatWhatsAppNumber(phoneStr) {
-            let cleaned = phoneStr.replace(/\D/g, '');
+            if (!phoneStr) return '';
+            let cleaned = String(phoneStr).replace(/\D/g, '');
             if (cleaned.startsWith('0')) {
                 cleaned = '254' + cleaned.substring(1);
             }
@@ -170,7 +172,7 @@
         }
 
         window.downloadVCard = (name, phone, year, regNo, course) => {
-            const cleanPhone = phone.replace(/\D/g, '');
+            const cleanPhone = phone ? String(phone).replace(/\D/g, '') : '';
 
             const vcardContent = [
                 "BEGIN:VCARD",
@@ -201,12 +203,12 @@
             if (!m) return;
 
             editIdInput.value = m.id;
-            document.getElementById("name").value = m.name;
-            document.getElementById("school").value = m.school;
-            document.getElementById("course").value = m.course;
-            document.getElementById("regNo").value = m.regNo;
-            document.getElementById("year").value = m.year;
-            document.getElementById("phone").value = m.phone;
+            document.getElementById("name").value = m.name || "";
+            document.getElementById("school").value = m.school || "";
+            document.getElementById("course").value = m.course || "";
+            document.getElementById("regNo").value = m.regNo || "";
+            document.getElementById("year").value = m.year || "Year 1";
+            document.getElementById("phone").value = m.phone || "";
 
             formTitle.innerText = "Editing Record";
             submitBtn.innerText = "Update Member";
@@ -233,7 +235,7 @@
             // Only run duplicate validation check if registering a NEW student profile row
             if (!editId) {
                 const isDuplicate = loadedMembersCache.some(student => 
-                    String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
+                    student.regNo && String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
                 );
 
                 if (isDuplicate) {
@@ -304,7 +306,7 @@
 
                 yearGroups.forEach(year => {
                     const students = sortedMembers.filter(student => {
-                        const memberYear = String(student.year).trim();
+                        const memberYear = student.year ? String(student.year).trim() : "";
                         return (
                             memberYear === year ||
                             memberYear === year.replace("Year ", "")
@@ -322,26 +324,27 @@
                     `;
 
                     students.forEach(m => {
-                        const waPhone = formatWhatsAppNumber(m.phone);
-                        const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
-                        const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
+                        const rawPhone = m.phone || "";
+                        const waPhone = formatWhatsAppNumber(rawPhone);
+                        const messageText = encodeURIComponent(`Assalam Alaykum ${m.name || 'Student'},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
+                        const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${messageText}` : '#';
 
-                        // Safe strings filtering to prevent syntax issues inside onclick parameters
-                        const safeName = String(m.name).replace(/'/g, "\\'");
-                        const safePhone = String(m.phone).replace(/'/g, "\\'");
-                        const safeYear = String(m.year).replace(/'/g, "\\'");
-                        const safeRegNo = String(m.regNo).replace(/'/g, "\\'");
-                        const safeCourse = String(m.course).replace(/'/g, "\\'");
+                        // RECTIFIED: Added dynamic string initialization boundaries checking alternatives
+                        const safeName = String(m.name || "Student").replace(/'/g, "\\'");
+                        const safePhone = String(rawPhone).replace(/'/g, "\\'");
+                        const safeYear = String(m.year || "").replace(/'/g, "\\'");
+                        const safeRegNo = String(m.regNo || "").replace(/'/g, "\\'");
+                        const safeCourse = String(m.course || "").replace(/'/g, "\\'");
 
                         memberList.innerHTML += `
                             <tr class="hover:bg-gray-50">
                                 <td class="px-6 py-4">
-                                    <div class="font-bold text-emerald-900">${m.name}</div>
-                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
+                                    <div class="font-bold text-emerald-900">${m.name || "Unnamed"}</div>
+                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo || "N/A"}</div>
                                 </td>
                                 <td class="px-6 py-4">
-                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
-                                    <div class="text-sm text-emerald-600">${m.course}</div>
+                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school || "N/A"}</div>
+                                    <div class="text-sm text-emerald-600">${m.course || "N/A"}</div>
                                 </td>
                                 <td class="px-6 py-4">
                                     <div class="flex gap-2">
@@ -349,9 +352,12 @@
                                             class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg hover:bg-gray-100">
                                             Save Contact
                                         </button>
+                                        ${waPhone ? `
                                         <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700">
                                             Send Invite
-                                        </a>
+                                        </a>` : `
+                                        <span class="text-[11px] text-gray-400 italic py-1 px-2 border border-dashed rounded-lg bg-gray-50">No Phone</span>
+                                        `}
                                     </div>
                                 </td>
                                 <td class="px-6 py-4 text-center">
@@ -375,7 +381,7 @@
                 memberList.innerHTML = `
                     <tr>
                         <td colspan="4" class="px-6 py-8 text-center text-red-500 font-medium italic">
-                            Error syncing with database backend. Verify Apps Script is deployed.
+                            Error formatting row rendering metrics template array data structure. Check script parameters.
                         </td>
                     </tr>
                 `;
