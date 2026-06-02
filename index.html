@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MAMU | Muslim Association of Meru University</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght=300;400;600&display=swap" rel="stylesheet">
     <style>
          :root {
             --islamic-green: #065f46;
@@ -74,7 +74,7 @@
 
                         <div class="flex flex-col gap-2">
                             <button type="submit" id="submitBtn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg">
-                                Save to Google Sheets
+                                Save to Cloud
                             </button>
                             <button type="button" id="cancelBtn" class="hidden w-full bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl transition-all">
                                 Cancel Edit
@@ -115,7 +115,7 @@
     <script>
         function filterTable() {
             const input = document.getElementById("searchInput");
-            const filter = input.value.toLowerCase();
+            const filter = input.value.toLowerCase().trim();
             const table = document.getElementById("memberList");
             const tr = table.getElementsByTagName("tr");
             
@@ -147,9 +147,7 @@
             }
         }
     </script>
-
     <script>
-        // Set this string to your updated Google Web App URL endpoint
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec";
 
         const form = document.getElementById("memberForm");
@@ -163,7 +161,6 @@
         
         let loadedMembersCache = [];
 
-        // RECTIFIED: Complete phone presence defense against missing object values runtime errors
         function formatWhatsAppNumber(phoneStr) {
             if (!phoneStr) return '';
             let cleaned = String(phoneStr).replace(/\D/g, '');
@@ -220,29 +217,27 @@
 
         cancelBtn.onclick = resetFormState;
 
-        // Clears data entry fields safely back into addition mode layouts
         function resetFormState() {
             form.reset();
             editIdInput.value = "";
             formTitle.innerText = "Register Student";
-            submitBtn.innerText = "Save to Google Sheets";
+            submitBtn.innerText = "Save to Cloud";
             cancelBtn.classList.add('hidden');
         }
 
-        form.addEventListener("submit", async(e) => {
+        form.addEventListener("submit", async (e) => {
             e.preventDefault();
 
             const inputRegNo = document.getElementById("regNo").value.trim();
             const editId = editIdInput.value;
 
-            // NO DUPLICATION RULE: Only check registration matches on additions, never on active updates
             if (!editId) {
                 const isDuplicate = loadedMembersCache.some(student => 
                     student.regNo && String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
                 );
 
                 if (isDuplicate) {
-                    alert("Validation Error: This Registration Number is already signed up in the directory!");
+                    alert("Registration Error: A student with this Registration Number is already registered!");
                     return;
                 }
             }
@@ -275,14 +270,14 @@
                 if (result.status === "success") {
                     alert(editId ? "Student records updated successfully." : "Student registered successfully.");
                     resetFormState();
-                    loadMembers();
+                    await loadMembers();
                 } else {
-                    alert("Database Error: Failed to write information to Google Sheets.");
+                    alert("Failed to save student.");
                 }
 
             } catch (error) {
                 console.error(error);
-                alert("Network Connection Failure: Unable to sync data with Google Workspace endpoints.");
+                alert("Unable to connect to Google Sheets.");
             }
 
             submitBtn.disabled = false;
@@ -301,7 +296,6 @@
                 const response = await fetch(SCRIPT_URL);
                 const members = await response.json();
 
-                // If error string packet parsing arrives from crashed backend script instances
                 if (members.status === "error") {
                     throw new Error(members.message);
                 }
@@ -326,7 +320,7 @@
                     memberList.innerHTML += `
                         <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
                             <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
-                                ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length} Students</span>
+                                ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length} ${year === 'Alumni' ? 'Members' : 'Students'}</span>
                             </td>
                         </tr>
                     `;
@@ -337,7 +331,6 @@
                         const messageText = encodeURIComponent(`Assalam Alaykum ${m.name || 'Student'},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
                         const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${messageText}` : '#';
 
-                        // Sanitizes string characters parameters safely before binding onclick functions
                         const safeName = String(m.name || "Student").replace(/'/g, "\\'");
                         const safePhone = String(rawPhone).replace(/'/g, "\\'");
                         const safeYear = String(m.year || "").replace(/'/g, "\\'");
@@ -380,7 +373,7 @@
                 });
 
                 const currentSearch = document.getElementById("searchInput").value;
-                if(currentSearch.trim() !== "") {
+                if (currentSearch.trim() !== "") {
                     filterTable();
                 }
 
@@ -396,7 +389,7 @@
             }
         }
 
-        loadMembers();
+        window.onload = loadMembers;
     </script>
 </body>
 
