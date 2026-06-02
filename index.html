@@ -147,7 +147,9 @@
             }
         }
     </script>
+
     <script>
+        // Set this string to your updated Google Web App URL endpoint
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec";
 
         const form = document.getElementById("memberForm");
@@ -161,7 +163,7 @@
         
         let loadedMembersCache = [];
 
-        // RECTIFIED: Added absolute verification to block property undefined reference runtime crashes
+        // RECTIFIED: Complete phone presence defense against missing object values runtime errors
         function formatWhatsAppNumber(phoneStr) {
             if (!phoneStr) return '';
             let cleaned = String(phoneStr).replace(/\D/g, '');
@@ -218,6 +220,7 @@
 
         cancelBtn.onclick = resetFormState;
 
+        // Clears data entry fields safely back into addition mode layouts
         function resetFormState() {
             form.reset();
             editIdInput.value = "";
@@ -232,7 +235,7 @@
             const inputRegNo = document.getElementById("regNo").value.trim();
             const editId = editIdInput.value;
 
-            // Only run duplicate validation check if registering a NEW student profile row
+            // NO DUPLICATION RULE: Only check registration matches on additions, never on active updates
             if (!editId) {
                 const isDuplicate = loadedMembersCache.some(student => 
                     student.regNo && String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
@@ -248,7 +251,7 @@
             submitBtn.innerText = editId ? "Updating..." : "Saving...";
 
             const memberData = {
-                id: editId || "", // Ensures ID is passed back up to Apps Script routing matches
+                id: editId || "",
                 name: document.getElementById("name").value.trim(),
                 regNo: inputRegNo,
                 school: document.getElementById("school").value,
@@ -298,11 +301,16 @@
                 const response = await fetch(SCRIPT_URL);
                 const members = await response.json();
 
+                // If error string packet parsing arrives from crashed backend script instances
+                if (members.status === "error") {
+                    throw new Error(members.message);
+                }
+
                 loadedMembersCache = members;
                 memberList.innerHTML = "";
 
                 const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
-                const sortedMembers = [...members].reverse(); // Shows latest submissions first inside groups
+                const sortedMembers = [...members].reverse(); 
 
                 yearGroups.forEach(year => {
                     const students = sortedMembers.filter(student => {
@@ -329,7 +337,7 @@
                         const messageText = encodeURIComponent(`Assalam Alaykum ${m.name || 'Student'},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
                         const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${messageText}` : '#';
 
-                        // RECTIFIED: Added dynamic string initialization boundaries checking alternatives
+                        // Sanitizes string characters parameters safely before binding onclick functions
                         const safeName = String(m.name || "Student").replace(/'/g, "\\'");
                         const safePhone = String(rawPhone).replace(/'/g, "\\'");
                         const safeYear = String(m.year || "").replace(/'/g, "\\'");
@@ -381,7 +389,7 @@
                 memberList.innerHTML = `
                     <tr>
                         <td colspan="4" class="px-6 py-8 text-center text-red-500 font-medium italic">
-                            Error formatting row rendering metrics template array data structure. Check script parameters.
+                            Error syncing with database backend. Verify Apps Script is deployed.
                         </td>
                     </tr>
                 `;
