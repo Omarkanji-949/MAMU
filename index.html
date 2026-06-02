@@ -224,74 +224,27 @@
             submitBtn.innerText = "Save to Google Sheets";
             cancelBtn.classList.add('hidden');
         }
-function doPost(e) {
-  var lock = LockService.getScriptLock();
-  lock.tryLock(10000);
-  
-  try {
-    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-    var data = JSON.parse(e.postData.contents);
-    
-    var rows = sheet.getDataRange().getValues();
-    var targetRow = -1;
-    
-    // Look for an existing student with the same Registration Number to update them
-    for (var i = 1; i < rows.length; i++) {
-      if (String(rows[i][2]).trim().toLowerCase() === String(data.regNo).trim().toLowerCase()) {
-        targetRow = i + 1; // Found them! (Plus 1 for 1-based indexing)
-        break;
-      }
-    }
-    
-    var timestamp = new Date();
-    
-    if (targetRow !== -1) {
-      // OVERWRITE EXISTING MEMBER (No Duplicates)
-      sheet.getCell(targetRow, 1).setValue(timestamp);
-      sheet.getCell(targetRow, 2).setValue(data.name);
-      sheet.getCell(targetRow, 3).setValue(data.regNo);
-      sheet.getCell(targetRow, 4).setValue(data.school);
-      sheet.getCell(targetRow, 5).setValue(data.course);
-      sheet.getCell(targetRow, 6).setValue(data.year);
-      sheet.getCell(targetRow, 7).setValue(data.phone);
-    } else {
-      // APPEND BRAND NEW MEMBER
-      sheet.appendRow([timestamp, data.name, data.regNo, data.school, data.course, data.year, data.phone]);
-    }
-    
-    return ContentService.createTextOutput(JSON.stringify({"status": "success"}))
-                         .setMimeType(ContentService.MimeType.JSON);
-  } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({"status": "error", "message": error.toString()}))
-                         .setMimeType(ContentService.MimeType.JSON);
-  } finally {
-    lock.releaseLock();
-  }
-}
 
-function doGet() {
-  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
-  var rows = sheet.getDataRange().getValues();
-  var members = [];
-  
-  for (var i = 1; i < rows.length; i++) {
-    var row = rows[i];
-    if (!row[1]) continue; 
-    
-    members.push({
-      id: "row_" + (i + 1), 
-      name: row[1],
-      regNo: row[2],
-      school: row[3],
-      course: row[4],
-      year: row[5],
-      phone: String(row[6])
-    });
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify(members))
-                       .setMimeType(ContentService.MimeType.JSON);
-}
+        form.addEventListener("submit", async(e) => {
+            e.preventDefault();
+
+            const inputRegNo = document.getElementById("regNo").value.trim();
+            const editId = editIdInput.value;
+
+            // Only check for duplicate system additions if adding a completely NEW registration row
+            if (!editId) {
+                const isDuplicate = loadedMembersCache.some(student => 
+                    String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
+                );
+
+                if (isDuplicate) {
+                    alert("Registration Error: A student with this Registration Number is already registered!");
+                    return;
+                }
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Saving to Cloud...";
 
             const memberData = {
                 id: editId || "id_" + Date.now(), 
@@ -303,18 +256,6 @@ function doGet() {
                 phone: document.getElementById("phone").value
             };
 
-            // Instant Save: Save immediately to Local Browser storage so they never disappear on screen
-            let localStore = JSON.parse(localStorage.getItem("mamu_stored_members")) || [];
-            if (editId) {
-                localStore = localStore.map(student => student.id === editId ? memberData : student);
-            } else {
-                localStore.push(memberData);
-            }
-            localStorage.setItem("mamu_stored_members", JSON.stringify(localStore));
-            
-            renderTableRows(localStore);
-
-            // Cloud Save: Send to your spreadsheet
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: "POST",
@@ -328,16 +269,16 @@ function doGet() {
                 const result = await response.json();
 
                 if (result.status === "success") {
-                    alert(editId ? "Student records updated successfully." : "Student registered successfully.");
+                    alert(editId ? "Student records updated successfully in Google Sheets." : "Student registered successfully.");
                     resetFormState();
-                    loadMembers(); // Refresh straight from your Google Sheet data pool
+                    loadMembers(); 
                 } else {
-                    alert("Saved locally, but Google Sheets connection issue occurred.");
+                    alert("Failed to update Google Sheets database backend.");
                 }
 
             } catch (error) {
                 console.error(error);
-                alert("Saved locally! (Notice: Google Sheets background sync failed, data is safe on this device)");
+                alert("Network communication error: Unable to connect to Google Sheets Web App endpoint.");
             }
 
             submitBtn.disabled = false;
@@ -348,9 +289,6 @@ function doGet() {
             memberList.innerHTML = "";
 
             const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
-            
-            // To make sure new registrations show up at the top inside their respective years, 
-            // we reverse the array if it's ordered old-to-new from sheets.
             const sortedMembers = [...loadedMembersCache].reverse();
 
             yearGroups.forEach(year => {
@@ -421,30 +359,46 @@ function doGet() {
             }
         }
 
-async function loadMembers() {
-    try {
-        // Fetch fresh data dynamically straight from your Google Sheet rows
-        const response = await fetch(SCRIPT_URL);
-        const cloudMembers = await response.json();
+        function loadMembers() {
+            memberList.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-emerald-800 font-medium">
+                        <span class="inline-block animate-pulse">Loading directory entries from Google Sheets...</span>
+                    </td>
+                </tr>
+            `;
 
-        if (Array.isArray(cloudMembers)) {
-            // Keep a temporary cache in memory for the edit function, then render
-            loadedMembersCache = cloudMembers;
-            renderTableRows(cloudMembers);
+            fetch(SCRIPT_URL)
+                .then(response => {
+                    if (!response.ok) throw new Error("Network offline");
+                    return response.json();
+                })
+                .then(cloudMembers => {
+                    if (Array.isArray(cloudMembers)) {
+                        loadedMembersCache = cloudMembers;
+                        renderTableRows(cloudMembers);
+                    } else {
+                        showTableError();
+                    }
+                })
+                .catch(error => {
+                    console.error("Live fetch failed:", error);
+                    showTableError();
+                });
         }
-    } catch (error) {
-        console.error("Error loading names from Google Sheets:", error);
-        memberList.innerHTML = `
-            <tr>
-                <td colspan="4" class="px-6 py-8 text-center text-gray-400 italic">
-                    Unable to load directory rows. Please check your internet connection.
-                </td>
-            </tr>
-        `;
-    }
-}
-        // Initialize dashboard instantly when page opens
-        window.onload = loadMembers;
+
+        function showTableError() {
+            memberList.innerHTML = `
+                <tr>
+                    <td colspan="4" class="px-6 py-8 text-center text-red-500 italic font-medium">
+                        Unable to load directory records. Confirm your Web App deployment is configured for "Anyone".
+                    </td>
+                </tr>
+            `;
+        }
+
+        // Run live cloud download immediately upon interface initialization
+        document.addEventListener("DOMContentLoaded", loadMembers);
     </script>
 </body>
 
