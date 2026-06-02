@@ -230,7 +230,7 @@
             const inputRegNo = document.getElementById("regNo").value.trim();
             const editId = editIdInput.value;
 
-            // Only check for duplicates when creating a brand NEW student record
+            // Only run duplicate validation check if registering a NEW student profile row
             if (!editId) {
                 const isDuplicate = loadedMembersCache.some(student => 
                     String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
@@ -246,7 +246,7 @@
             submitBtn.innerText = editId ? "Updating..." : "Saving...";
 
             const memberData = {
-                id: editId || "", // Passes empty or existing internal sheet row mapping tracking tag
+                id: editId || "", // Ensures ID is passed back up to Apps Script routing matches
                 name: document.getElementById("name").value.trim(),
                 regNo: inputRegNo,
                 school: document.getElementById("school").value,
