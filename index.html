@@ -148,6 +148,7 @@
         }
     </script>
     <script>
+        // Replace with your actual deployed Google Apps Script Web App URL
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec";
 
         const form = document.getElementById("memberForm");
@@ -196,14 +197,17 @@
             document.body.removeChild(link);
         };
 
-        window.prepareEdit = (id, name, school, course, regNo, year, phone) => {
-            editIdInput.value = id;
-            document.getElementById("name").value = name;
-            document.getElementById("school").value = school;
-            document.getElementById("course").value = course;
-            document.getElementById("regNo").value = regNo;
-            document.getElementById("year").value = year;
-            document.getElementById("phone").value = phone;
+        window.prepareEdit = (id) => {
+            const m = loadedMembersCache.find(student => String(student.id) === String(id));
+            if (!m) return;
+
+            editIdInput.value = m.id;
+            document.getElementById("name").value = m.name;
+            document.getElementById("school").value = m.school;
+            document.getElementById("course").value = m.course;
+            document.getElementById("regNo").value = m.regNo;
+            document.getElementById("year").value = m.year;
+            document.getElementById("phone").value = m.phone;
 
             formTitle.innerText = "Editing Record";
             submitBtn.innerText = "Update Member";
@@ -242,7 +246,7 @@
             submitBtn.innerText = "Saving...";
 
             const memberData = {
-                id: editId || "local_" + Date.now(), 
+                id: editId || "id_" + Date.now(), 
                 name: document.getElementById("name").value,
                 regNo: inputRegNo,
                 school: document.getElementById("school").value,
@@ -251,18 +255,18 @@
                 phone: document.getElementById("phone").value
             };
 
-            // Immediately save locally so it renders right away and persists across refreshes
-            let localStore = JSON.parse(localStorage.getItem("mamu_dashboard_members")) || [];
+            // Instant Save: Save immediately to Local Browser storage so they never disappear on screen
+            let localStore = JSON.parse(localStorage.getItem("mamu_stored_members")) || [];
             if (editId) {
                 localStore = localStore.map(student => student.id === editId ? memberData : student);
             } else {
                 localStore.push(memberData);
             }
-            localStorage.setItem("mamu_dashboard_members", JSON.stringify(localStore));
+            localStorage.setItem("mamu_stored_members", JSON.stringify(localStore));
             
-            // Re-render display with locally stored records immediately
-            renderMembersList(localStore);
+            renderTableRows(localStore);
 
+            // Cloud Save: Send to your spreadsheet
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: "POST",
@@ -278,28 +282,31 @@
                 if (result.status === "success") {
                     alert(editId ? "Student records updated successfully." : "Student registered successfully.");
                     resetFormState();
-                    await loadMembers(); // Fetches fresh data to verify against Google Sheet state
+                    loadMembers(); // Refresh straight from your Google Sheet data pool
                 } else {
-                    alert("Data saved locally, but Google Sheets rejected the upload.");
+                    alert("Saved locally, but Google Sheets connection issue occurred.");
                 }
 
             } catch (error) {
                 console.error(error);
-                alert("Data saved locally. Notice: Unable to instantly sync to Google Sheets network.");
+                alert("Saved locally! (Notice: Google Sheets background sync failed, data is safe on this device)");
             }
 
             submitBtn.disabled = false;
         });
 
-        function renderMembersList(membersArray) {
+        function renderTableRows(membersArray) {
             loadedMembersCache = Array.isArray(membersArray) ? membersArray : [];
             memberList.innerHTML = "";
 
             const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
-            const reversedMembers = [...loadedMembersCache].reverse();
+            
+            // To make sure new registrations show up at the top inside their respective years, 
+            // we reverse the array if it's ordered old-to-new from sheets.
+            const sortedMembers = [...loadedMembersCache].reverse();
 
             yearGroups.forEach(year => {
-                const students = reversedMembers.filter(student => {
+                const students = sortedMembers.filter(student => {
                     const memberYear = String(student.year).trim();
                     return (
                         memberYear === year ||
@@ -317,7 +324,7 @@
                     </tr>
                 `;
 
-                students.forEach((m, index) => {
+                students.forEach((m) => {
                     const waPhone = formatWhatsAppNumber(m.phone);
                     const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
                     const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
@@ -327,9 +334,6 @@
                     const safeYear = String(m.year).replace(/'/g, "\\'");
                     const safeRegNo = String(m.regNo).replace(/'/g, "\\'");
                     const safeCourse = String(m.course).replace(/'/g, "\\'");
-                    const safeSchool = String(m.school).replace(/'/g, "\\'");
-                    
-                    const uniqueId = m.id || "idx_" + index; 
 
                     memberList.innerHTML += `
                         <tr class="hover:bg-gray-50">
@@ -353,7 +357,7 @@
                                 </div>
                             </td>
                             <td class="px-6 py-4 text-center">
-                                <button onclick="prepareEdit('${uniqueId}','${safeName}','${safeSchool}','${safeCourse}','${safeRegNo}','${safeYear}','${safePhone}')"
+                                <button onclick="prepareEdit('${m.id}')"
                                         class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
                                     EDIT
                                 </button>
@@ -369,28 +373,27 @@
             }
         }
 
-        async function loadMembers() {
-            // First: Load directly from LocalStorage so dashboard loads immediately without gaps
-            const initialLocalData = JSON.parse(localStorage.getItem("mamu_dashboard_members")) || [];
-            if(initialLocalData.length > 0){
-                renderMembersList(initialLocalData);
+        function loadMembers() {
+            // 1. Instantly pull whatever data is saved locally from last time so the screen is NEVER blank on refresh
+            const preservedData = JSON.parse(localStorage.getItem("mamu_stored_members")) || [];
+            if (preservedData.length > 0) {
+                renderTableRows(preservedData);
             }
 
-            try {
-                // Second: Background sync checking Google Sheets online distribution pipeline
-                const response = await fetch(SCRIPT_URL);
-                const cloudMembers = await response.json();
-
-                if(Array.isArray(cloudMembers) && cloudMembers.length > 0) {
-                    // Update storage with authoritative rows fetched from the cloud sheet server
-                    localStorage.setItem("mamu_dashboard_members", JSON.stringify(cloudMembers));
-                    renderMembersList(cloudMembers);
-                }
-            } catch (error) {
-                console.error("Background online load sync error:", error);
-            }
+            // 2. Reach out to Google Sheets in the background to grab the live master-copy list
+            fetch(SCRIPT_URL)
+                .then(response => response.json())
+                .then(cloudMembers => {
+                    if (Array.isArray(cloudMembers) && cloudMembers.length > 0) {
+                        // Overwrite local copy with Google Sheets' authoritative rows and update dashboard layout
+                        localStorage.setItem("mamu_stored_members", JSON.stringify(cloudMembers));
+                        renderTableRows(cloudMembers);
+                    }
+                })
+                .catch(error => console.log("Offline or sheet loading background script error, keeping cached local database rendering active."));
         }
 
+        // Initialize dashboard instantly when page opens
         window.onload = loadMembers;
     </script>
 </body>
