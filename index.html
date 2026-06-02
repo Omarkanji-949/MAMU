@@ -87,7 +87,7 @@
             <section class="lg:col-span-2">
                 <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
                     <div class="p-4 bg-emerald-50 border-b flex justify-between items-center">
-                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search by name, school, course, year..." class="w-full max-w-sm p-2 border rounded-full px-4 outline-emerald-500">
+                        <input type="text" id="searchInput" onkeyup="filterTable()" placeholder="Search directory..." class="w-full max-w-sm p-2 border rounded-full px-4 outline-emerald-500">
                         <div class="flex items-center gap-2">
                             <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
                             <span class="text-[10px] font-black text-emerald-700 uppercase tracking-tighter">Live Sync</span>
@@ -148,7 +148,6 @@
         }
     </script>
     <script>
-        // Replace with your actual deployed Google Apps Script Web App URL
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec";
 
         const form = document.getElementById("memberForm");
@@ -231,29 +230,29 @@
             const inputRegNo = document.getElementById("regNo").value.trim();
             const editId = editIdInput.value;
 
-            // Only check for duplicate system additions if adding a completely NEW registration row
+            // Only check for duplicates when creating a brand NEW student record
             if (!editId) {
                 const isDuplicate = loadedMembersCache.some(student => 
                     String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
                 );
 
                 if (isDuplicate) {
-                    alert("Registration Error: A student with this Registration Number is already registered!");
+                    alert("Validation Error: This Registration Number is already signed up in the directory!");
                     return;
                 }
             }
 
             submitBtn.disabled = true;
-            submitBtn.innerText = "Saving to Cloud...";
+            submitBtn.innerText = editId ? "Updating..." : "Saving...";
 
             const memberData = {
-                id: editId || "id_" + Date.now(), 
-                name: document.getElementById("name").value,
+                id: editId || "", // Passes empty or existing internal sheet row mapping tracking tag
+                name: document.getElementById("name").value.trim(),
                 regNo: inputRegNo,
                 school: document.getElementById("school").value,
-                course: document.getElementById("course").value,
+                course: document.getElementById("course").value.trim(),
                 year: document.getElementById("year").value,
-                phone: document.getElementById("phone").value
+                phone: document.getElementById("phone").value.trim()
             };
 
             try {
@@ -269,136 +268,121 @@
                 const result = await response.json();
 
                 if (result.status === "success") {
-                    alert(editId ? "Student records updated successfully in Google Sheets." : "Student registered successfully.");
+                    alert(editId ? "Student records updated successfully." : "Student registered successfully.");
                     resetFormState();
-                    loadMembers(); 
+                    loadMembers();
                 } else {
-                    alert("Failed to update Google Sheets database backend.");
+                    alert("Database Error: Failed to write information to Google Sheets.");
                 }
 
             } catch (error) {
                 console.error(error);
-                alert("Network communication error: Unable to connect to Google Sheets Web App endpoint.");
+                alert("Network Connection Failure: Unable to sync data with Google Workspace endpoints.");
             }
 
             submitBtn.disabled = false;
         });
 
-        function renderTableRows(membersArray) {
-            loadedMembersCache = Array.isArray(membersArray) ? membersArray : [];
-            memberList.innerHTML = "";
-
-            const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
-            const sortedMembers = [...loadedMembersCache].reverse();
-
-            yearGroups.forEach(year => {
-                const students = sortedMembers.filter(student => {
-                    const memberYear = String(student.year).trim();
-                    return (
-                        memberYear === year ||
-                        memberYear === year.replace("Year ", "")
-                    );
-                });
-
-                if (!students.length) return;
-
-                memberList.innerHTML += `
-                    <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
-                        <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
-                            ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length}</span>
+        async function loadMembers() {
+            try {
+                memberList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-8 text-center text-emerald-800 font-medium">
+                            <span class="inline-block animate-pulse">Loading directory entries from Google Sheets...</span>
                         </td>
                     </tr>
                 `;
 
-                students.forEach((m) => {
-                    const waPhone = formatWhatsAppNumber(m.phone);
-                    const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
-                    const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
+                const response = await fetch(SCRIPT_URL);
+                const members = await response.json();
 
-                    const safeName = String(m.name).replace(/'/g, "\\'");
-                    const safePhone = String(m.phone).replace(/'/g, "\\'");
-                    const safeYear = String(m.year).replace(/'/g, "\\'");
-                    const safeRegNo = String(m.regNo).replace(/'/g, "\\'");
-                    const safeCourse = String(m.course).replace(/'/g, "\\'");
+                loadedMembersCache = members;
+                memberList.innerHTML = "";
+
+                const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
+                const sortedMembers = [...members].reverse(); // Shows latest submissions first inside groups
+
+                yearGroups.forEach(year => {
+                    const students = sortedMembers.filter(student => {
+                        const memberYear = String(student.year).trim();
+                        return (
+                            memberYear === year ||
+                            memberYear === year.replace("Year ", "")
+                        );
+                    });
+
+                    if (!students.length) return;
 
                     memberList.innerHTML += `
-                        <tr class="hover:bg-gray-50">
-                            <td class="px-6 py-4">
-                                <div class="font-bold text-emerald-900">${m.name}</div>
-                                <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
-                                <div class="text-sm text-emerald-600">${m.course}</div>
-                            </td>
-                            <td class="px-6 py-4">
-                                <div class="flex gap-2">
-                                    <button onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
-                                        class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg">
-                                        Save Contact
-                                    </button>
-                                    <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg">
-                                        Send Invite
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="px-6 py-4 text-center">
-                                <button onclick="prepareEdit('${m.id}')"
-                                        class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-                                    EDIT
-                                </button>
+                        <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
+                            <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
+                                ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length} Students</span>
                             </td>
                         </tr>
                     `;
-                });
-            });
 
-            const currentSearch = document.getElementById("searchInput").value;
-            if(currentSearch.trim() !== "") {
-                filterTable();
+                    students.forEach(m => {
+                        const waPhone = formatWhatsAppNumber(m.phone);
+                        const messageText = encodeURIComponent(`Assalam Alaykum ${m.name},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
+                        const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
+
+                        // Safe strings filtering to prevent syntax issues inside onclick parameters
+                        const safeName = String(m.name).replace(/'/g, "\\'");
+                        const safePhone = String(m.phone).replace(/'/g, "\\'");
+                        const safeYear = String(m.year).replace(/'/g, "\\'");
+                        const safeRegNo = String(m.regNo).replace(/'/g, "\\'");
+                        const safeCourse = String(m.course).replace(/'/g, "\\'");
+
+                        memberList.innerHTML += `
+                            <tr class="hover:bg-gray-50">
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-emerald-900">${m.name}</div>
+                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school}</div>
+                                    <div class="text-sm text-emerald-600">${m.course}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex gap-2">
+                                        <button onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
+                                            class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg hover:bg-gray-100">
+                                            Save Contact
+                                        </button>
+                                        <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700">
+                                            Send Invite
+                                        </a>
+                                    </div>
+                                </td>
+                                <td class="px-6 py-4 text-center">
+                                    <button onclick="prepareEdit('${m.id}')"
+                                            class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                        EDIT
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    });
+                });
+
+                const currentSearch = document.getElementById("searchInput").value;
+                if(currentSearch.trim() !== "") {
+                    filterTable();
+                }
+
+            } catch (error) {
+                console.error("Load error:", error);
+                memberList.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-8 text-center text-red-500 font-medium italic">
+                            Error syncing with database backend. Verify Apps Script is deployed.
+                        </td>
+                    </tr>
+                `;
             }
         }
 
-        function loadMembers() {
-            memberList.innerHTML = `
-                <tr>
-                    <td colspan="4" class="px-6 py-8 text-center text-emerald-800 font-medium">
-                        <span class="inline-block animate-pulse">Loading directory entries from Google Sheets...</span>
-                    </td>
-                </tr>
-            `;
-
-            fetch(SCRIPT_URL)
-                .then(response => {
-                    if (!response.ok) throw new Error("Network offline");
-                    return response.json();
-                })
-                .then(cloudMembers => {
-                    if (Array.isArray(cloudMembers)) {
-                        loadedMembersCache = cloudMembers;
-                        renderTableRows(cloudMembers);
-                    } else {
-                        showTableError();
-                    }
-                })
-                .catch(error => {
-                    console.error("Live fetch failed:", error);
-                    showTableError();
-                });
-        }
-
-        function showTableError() {
-            memberList.innerHTML = `
-                <tr>
-                    <td colspan="4" class="px-6 py-8 text-center text-red-500 italic font-medium">
-                        Unable to load directory records. Confirm your Web App deployment is configured for "Anyone".
-                    </td>
-                </tr>
-            `;
-        }
-
-        // Run live cloud download immediately upon interface initialization
-        document.addEventListener("DOMContentLoaded", loadMembers);
+        loadMembers();
     </script>
 </body>
 
