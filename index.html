@@ -4,12 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Standard Page Title & Search Engine Meta Tags -->
     <title>MAMU | Muslim Association of Meru University</title>
+    <meta property="og:site_name" content="MAMU" />
+    <meta name="description" content="Muslim Association of Meru University (MAMU) Cloud Directory and Student Portal." />
+
+    <!-- Structured Data to fix site name in Google Search Results -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "MAMU",
+      "alternateName": "Muslim Association of Meru University",
+      "url": "https://mamu36673.github.io/MamuWeb/"
+    }
+    </script>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght=300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
-         :root {
-            --islamic-white: #065f46;
+        :root {
+            --islamic-green: #065f46;
             --gold: #fbbf24;
         }
         
@@ -28,9 +44,18 @@
 <body>
 
     <header class="islamic-gradient text-white pt-10 pb-14 shadow-2xl">
-        <div class="container mx-auto text-center px-4">
-            <h1 class="text-3xl md:text-5xl font-bold mb-2">Muslim Association of Meru University Directorty</h1>
-            <p class="text-emerald-100 italic">BISMILLAH. WELCOME ALL</p>
+        <div class="container mx-auto text-center px-4 flex flex-col items-center">
+            <h1 class="text-3xl md:text-5xl font-bold mb-2">MAMU Cloud Directory</h1>
+            <p class="text-emerald-100 italic mb-6">BISMILLAH. WELCOME ALL</p>
+            
+            <a href="https://mamu36673.github.io/MamuWeb/" 
+               target="_blank" 
+               class="inline-flex items-center gap-2 bg-emerald-950/40 hover:bg-emerald-900 border border-emerald-400/30 text-emerald-100 hover:text-white px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 shadow-md hover:shadow-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Back Home
+            </a>
         </div>
     </header>
 
@@ -115,7 +140,7 @@
     <script>
         function filterTable() {
             const input = document.getElementById("searchInput");
-            const filter = input.value.toLowerCase().trim();
+            const filter = input.value.toLowerCase();
             const table = document.getElementById("memberList");
             const tr = table.getElementsByTagName("tr");
             
@@ -148,8 +173,6 @@
         }
     </script>
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwfWIX1tHkBw3oAbx523GicYoyEp4Wl7eCgnWZro_jn_fmNzaOYHUr8Zo8HNhPsP2R9Yg/exec";
-
         const form = document.getElementById("memberForm");
         const formTitle = document.getElementById("formTitle");
         const submitBtn = document.getElementById("submitBtn");
@@ -157,13 +180,12 @@
         const editIdInput = document.getElementById("editId");
         const memberList = document.getElementById("memberList");
 
+        // REPLACE THIS WITH YOUR DEPLOYED GOOGLE APPS SCRIPT URL
+        const SCRIPT_URL = "YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"; 
         const WHATSAPP_GROUP_LINK = "https://chat.whatsapp.com/YOUR_GROUP_INVITE_CODE";
-        
-        let loadedMembersCache = [];
 
         function formatWhatsAppNumber(phoneStr) {
-            if (!phoneStr) return '';
-            let cleaned = String(phoneStr).replace(/\D/g, '');
+            let cleaned = phoneStr.replace(/\D/g, '');
             if (cleaned.startsWith('0')) {
                 cleaned = '254' + cleaned.substring(1);
             }
@@ -171,7 +193,7 @@
         }
 
         window.downloadVCard = (name, phone, year, regNo, course) => {
-            const cleanPhone = phone ? String(phone).replace(/\D/g, '') : '';
+            const cleanPhone = phone.replace(/\D/g, '');
 
             const vcardContent = [
                 "BEGIN:VCARD",
@@ -198,16 +220,18 @@
         };
 
         window.prepareEdit = (id) => {
-            const m = loadedMembersCache.find(student => String(student.id) === String(id));
+            let members = JSON.parse(localStorage.getItem("mamu_members")) || [];
+            let m = members.find(student => String(student.id) === String(id));
+            
             if (!m) return;
 
-            editIdInput.value = m.id;
-            document.getElementById("name").value = m.name || "";
-            document.getElementById("school").value = m.school || "";
-            document.getElementById("course").value = m.course || "";
-            document.getElementById("regNo").value = m.regNo || "";
-            document.getElementById("year").value = m.year || "Year 1";
-            document.getElementById("phone").value = m.phone || "";
+            editIdInput.value = String(m.id);
+            document.getElementById("name").value = m.name || '';
+            document.getElementById("school").value = m.school || '';
+            document.getElementById("course").value = m.course || '';
+            document.getElementById("regNo").value = m.regNo || '';
+            document.getElementById("year").value = m.year || 'Year 1';
+            document.getElementById("phone").value = m.phone || '';
 
             formTitle.innerText = "Editing Record";
             submitBtn.innerText = "Update Member";
@@ -219,7 +243,7 @@
 
         function resetFormState() {
             form.reset();
-            editIdInput.value = "";
+            editIdInput.value = ""; 
             formTitle.innerText = "Register Student";
             submitBtn.innerText = "Save to Cloud";
             cancelBtn.classList.add('hidden');
@@ -229,11 +253,13 @@
             e.preventDefault();
 
             const inputRegNo = document.getElementById("regNo").value.trim();
-            const editId = editIdInput.value;
+            const editId = (editIdInput.value && editIdInput.value.trim() !== "") ? String(editIdInput.value).trim() : null;
+            
+            let members = JSON.parse(localStorage.getItem("mamu_members")) || [];
 
             if (!editId) {
-                const isDuplicate = loadedMembersCache.some(student => 
-                    student.regNo && String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
+                const isDuplicate = members.some(student => 
+                    String(student.regNo).trim().toLowerCase() === inputRegNo.toLowerCase()
                 );
 
                 if (isDuplicate) {
@@ -242,19 +268,31 @@
                 }
             }
 
-            submitBtn.disabled = true;
-            submitBtn.innerText = editId ? "Updating..." : "Saving...";
+            const uniqueId = editId || (typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : 'id_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9));
+
+            const existingMember = editId ? members.find(m => String(m.id) === editId) : null;
+            const creationTime = existingMember ? existingMember.createdAt : Date.now();
 
             const memberData = {
-                id: editId || "",
+                id: uniqueId,
                 name: document.getElementById("name").value.trim(),
                 regNo: inputRegNo,
                 school: document.getElementById("school").value,
                 course: document.getElementById("course").value.trim(),
                 year: document.getElementById("year").value,
-                phone: document.getElementById("phone").value.trim()
+                phone: document.getElementById("phone").value.trim(),
+                createdAt: creationTime
             };
 
+            if (editId) {
+                members = members.map(m => String(m.id) === editId ? memberData : m);
+            } else {
+                members.push(memberData);
+            }
+            
+            localStorage.setItem("mamu_members", JSON.stringify(members));
+
+            console.log("Sending to Cloud:", memberData);
             try {
                 const response = await fetch(SCRIPT_URL, {
                     method: "POST",
@@ -268,124 +306,112 @@
                 const result = await response.json();
 
                 if (result.status === "success") {
-                    alert(editId ? "Student records updated successfully." : "Student registered successfully.");
-                    resetFormState();
-                    await loadMembers();
+                    alert(editId ? "Student records updated successfully in Cloud!" : "Student registered successfully in Cloud.");
                 } else {
-                    alert("Failed to save student.");
+                    alert("Local update saved, but failed to synchronize with cloud database.");
                 }
 
             } catch (error) {
                 console.error(error);
-                alert("Unable to connect to Google Sheets.");
+                alert("Saved locally! Unable to reach Google Sheets API right now.");
             }
 
-            submitBtn.disabled = false;
+            resetFormState();
+            loadMembers();
         });
 
-        async function loadMembers() {
-            try {
-                memberList.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="px-6 py-8 text-center text-emerald-800 font-medium">
-                            <span class="inline-block animate-pulse">Loading directory entries from Google Sheets...</span>
+        function loadMembers() {
+            let members = JSON.parse(localStorage.getItem("mamu_members")) || [];
+
+            // AUTO-REPAIR: Assign unique IDs to old legacy entries missing an 'id'
+            let needsSave = false;
+            members = members.map(m => {
+                if (!m.id) {
+                    needsSave = true;
+                    m.id = typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : 'id_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9);
+                }
+                return m;
+            });
+
+            if (needsSave) {
+                localStorage.setItem("mamu_members", JSON.stringify(members));
+            }
+
+            memberList.innerHTML = "";
+
+            const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
+            const sortedMembers = [...members].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+
+            yearGroups.forEach(year => {
+                const students = sortedMembers.filter(student => {
+                    const memberYear = String(student.year || '').trim();
+                    return (
+                        memberYear === year ||
+                        memberYear === year.replace("Year ", "")
+                    );
+                });
+
+                if (!students.length) return;
+
+                memberList.innerHTML += `
+                    <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
+                        <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
+                            ${year}
+                            <span class="ml-2 font-medium text-emerald-400">
+                                | ${students.length} ${year === 'Alumni' ? 'Members' : 'Students'}
+                            </span>
                         </td>
                     </tr>
                 `;
 
-                const response = await fetch(SCRIPT_URL);
-                const members = await response.json();
+                students.forEach(m => {
+                    const waPhone = formatWhatsAppNumber(m.phone || '');
+                    const messageText = encodeURIComponent(`Assalam Alaykum ${m.name || 'Student'},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
+                    const waUrl = `https://wa.me/${waPhone}?text=${messageText}`;
 
-                if (members.status === "error") {
-                    throw new Error(members.message);
-                }
-
-                loadedMembersCache = members;
-                memberList.innerHTML = "";
-
-                const yearGroups = ["Year 1", "Year 2", "Year 3", "Year 4", "Alumni"];
-                const sortedMembers = [...members].reverse(); 
-
-                yearGroups.forEach(year => {
-                    const students = sortedMembers.filter(student => {
-                        const memberYear = student.year ? String(student.year).trim() : "";
-                        return (
-                            memberYear === year ||
-                            memberYear === year.replace("Year ", "")
-                        );
-                    });
-
-                    if (!students.length) return;
+                    const safeId = String(m.id).replace(/'/g, "\\'");
+                    const safeName = String(m.name || 'Unnamed').replace(/'/g, "\\'");
+                    const safePhone = String(m.phone || '').replace(/'/g, "\\'");
+                    const safeYear = String(m.year || '').replace(/'/g, "\\'");
+                    const safeRegNo = String(m.regNo || '').replace(/'/g, "\\'");
+                    const safeCourse = String(m.course || '').replace(/'/g, "\\'");
 
                     memberList.innerHTML += `
-                        <tr data-group-header="true" class="bg-emerald-50/80 border-y border-emerald-100">
-                            <td colspan="4" class="px-6 py-2 text-[11px] font-black text-emerald-800 uppercase tracking-widest">
-                                ${year} <span class="ml-2 font-medium text-emerald-400">| ${students.length} ${year === 'Alumni' ? 'Members' : 'Students'}</span>
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-emerald-900">${m.name || 'Unnamed'}</div>
+                                <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo || ''}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-xs font-semibold text-gray-500 uppercase">${m.school || ''}</div>
+                                <div class="text-sm text-emerald-600">${m.course || ''}</div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex gap-2">
+                                    <button
+                                        onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
+                                        class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg">
+                                        Save Contact
+                                    </button>
+                                    <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg">
+                                        Send Invite
+                                    </a>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                <button onclick="prepareEdit('${safeId}')"
+                                        class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
+                                    EDIT
+                                </button>
                             </td>
                         </tr>
                     `;
-
-                    students.forEach(m => {
-                        const rawPhone = m.phone || "";
-                        const waPhone = formatWhatsAppNumber(rawPhone);
-                        const messageText = encodeURIComponent(`Assalam Alaykum ${m.name || 'Student'},\n\nWelcome to MAMU.\n\nJoin our WhatsApp group:\n\n${WHATSAPP_GROUP_LINK}`);
-                        const waUrl = waPhone ? `https://wa.me/${waPhone}?text=${messageText}` : '#';
-
-                        const safeName = String(m.name || "Student").replace(/'/g, "\\'");
-                        const safePhone = String(rawPhone).replace(/'/g, "\\'");
-                        const safeYear = String(m.year || "").replace(/'/g, "\\'");
-                        const safeRegNo = String(m.regNo || "").replace(/'/g, "\\'");
-                        const safeCourse = String(m.course || "").replace(/'/g, "\\'");
-
-                        memberList.innerHTML += `
-                            <tr class="hover:bg-gray-50">
-                                <td class="px-6 py-4">
-                                    <div class="font-bold text-emerald-900">${m.name || "Unnamed"}</div>
-                                    <div class="text-[10px] text-gray-400 font-mono uppercase">${m.regNo || "N/A"}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="text-xs font-semibold text-gray-500 uppercase">${m.school || "N/A"}</div>
-                                    <div class="text-sm text-emerald-600">${m.course || "N/A"}</div>
-                                </td>
-                                <td class="px-6 py-4">
-                                    <div class="flex gap-2">
-                                        <button onclick="downloadVCard('${safeName}','${safePhone}','${safeYear}','${safeRegNo}','${safeCourse}')"
-                                            class="text-[11px] font-bold bg-white border border-gray-300 px-2 py-1 rounded-lg hover:bg-gray-100">
-                                            Save Contact
-                                        </button>
-                                        ${waPhone ? `
-                                        <a href="${waUrl}" target="_blank" class="text-[11px] font-bold bg-emerald-600 text-white px-2 py-1 rounded-lg hover:bg-emerald-700">
-                                            Send Invite
-                                        </a>` : `
-                                        <span class="text-[11px] text-gray-400 italic py-1 px-2 border border-dashed rounded-lg bg-gray-50">No Phone</span>
-                                        `}
-                                    </div>
-                                </td>
-                                <td class="px-6 py-4 text-center">
-                                    <button onclick="prepareEdit('${m.id}')"
-                                            class="text-[10px] font-black tracking-tight bg-white border border-emerald-200 text-emerald-700 px-3 py-1.5 rounded-lg hover:bg-emerald-600 hover:text-white transition-all shadow-sm">
-                                        EDIT
-                                    </button>
-                                </td>
-                            </tr>
-                        `;
-                    });
                 });
+            });
 
-                const currentSearch = document.getElementById("searchInput").value;
-                if (currentSearch.trim() !== "") {
-                    filterTable();
-                }
-
-            } catch (error) {
-                console.error("Load error:", error);
-                memberList.innerHTML = `
-                    <tr>
-                        <td colspan="4" class="px-6 py-8 text-center text-red-500 font-medium italic">
-                            Error syncing with database backend. Verify Apps Script is deployed.
-                        </td>
-                    </tr>
-                `;
+            const currentSearch = document.getElementById("searchInput").value;
+            if (currentSearch.trim() !== "") {
+                filterTable();
             }
         }
 
