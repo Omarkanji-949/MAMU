@@ -149,7 +149,11 @@
                 const result = await response.json();
 
                 if (result.status === "success") {
-                    alert("Registration submitted successfully!");
+                    if (result.action === "updated") {
+                        alert("Student details already updated successfully in cloud!");
+                    } else {
+                        alert("Registration submitted successfully!");
+                    }
                     form.reset();
                 } else {
                     alert("Submission failed. Please try again.");
