@@ -22,7 +22,7 @@
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Amiri:ital,wght@0,700;1,400&family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
     <style>
         :root {
             --islamic-green: #10623a;
@@ -33,24 +33,37 @@
             font-family: 'Outfit', sans-serif;
             background: #fdfdfb;
         }
+
+        .islamic-font {
+            font-family: 'Amiri', serif;
+        }
     </style>
 </head>
 
 <body>
 
     <header class="shadow-lg">
-        <!-- REGION 1: WHITE BACKGROUND FOR LOGOS (EQUAL DIMENSIONS: 80px by 80px) -->
+        <!-- REGION 1: WHITE BACKGROUND FOR LOGOS & FLOATING ISLAMIC BANNER -->
         <div class="bg-white py-6">
-            <div class="container mx-auto px-4 max-w-4xl flex items-center justify-between">
+            <div class="container mx-auto px-4 max-w-5xl flex flex-col md:flex-row items-center justify-between gap-4">
                 <!-- MAMU LOGO (LEFT) -->
-                <a href="https://mamu36673.github.io/MamuWeb/" target="_blank" class="flex items-center justify-center">
+                <a href="https://mamu36673.github.io/MamuWeb/" target="_blank" class="flex items-center justify-center shrink-0">
                     <img src="MAMU logo.png" alt="MAMU Logo" 
                          class="h-20 w-20 object-contain hover:scale-105 transition-transform" 
                          onerror="this.onerror=null; this.src='https://via.placeholder.com/80?text=MAMU';">
                 </a>
 
+                <!-- STYLISH ISLAMIC FLOATING & BOUNCING BUTTON -->
+                <div class="animate-bounce my-2 md:my-0 text-center">
+                    <span class="inline-flex items-center gap-2 bg-gradient-to-r from-emerald-800 via-emerald-700 to-emerald-900 text-amber-300 px-5 py-2.5 rounded-full border-2 border-amber-400 shadow-xl text-sm md:text-base font-bold tracking-wide transition-transform hover:scale-105">
+                        <span class="text-amber-400 text-lg">☪</span>
+                        <span class="islamic-font italic text-amber-200">"Welcome to Meru University, Home of Islamic Nurturing"</span>
+                        <span class="text-amber-400 text-lg">☪</span>
+                    </span>
+                </div>
+
                 <!-- MERU UNIVERSITY LOGO (RIGHT) -->
-                <a href="https://www.must.ac.ke/" target="_blank" class="flex items-center justify-center">
+                <a href="https://www.must.ac.ke/" target="_blank" class="flex items-center justify-center shrink-0">
                     <img src="Meru University logo.png" alt="Meru University Logo" 
                          class="h-20 w-20 object-contain hover:scale-105 transition-transform" 
                          onerror="this.onerror=null; this.src='https://via.placeholder.com/80?text=MUST';">
