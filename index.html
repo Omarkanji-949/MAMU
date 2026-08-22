@@ -33,20 +33,15 @@
             font-family: 'Outfit', sans-serif;
             background: #fdfdfb;
         }
-
-        .header-style {
-            background: #ffffff;
-            border-bottom: 5px solid var(--gold);
-        }
     </style>
 </head>
 
 <body>
 
-    <header class="header-style text-emerald-900 pt-8 pb-14 shadow-md">
-        <div class="container mx-auto px-4 max-w-4xl">
-            <!-- LOGO CONTAINER: MAMU ON LEFT, MUST ON RIGHT (NO BUTTON CONTAINERS) -->
-            <div class="flex items-center justify-between mb-4">
+    <header class="shadow-lg">
+        <!-- REGION 1: WHITE BACKGROUND FOR LOGOS -->
+        <div class="bg-white py-6">
+            <div class="container mx-auto px-4 max-w-4xl flex items-center justify-between">
                 <!-- MAMU LOGO (LEFT) -->
                 <a href="https://mamu36673.github.io/MamuWeb/" target="_blank">
                     <img src="https://mamu36673.github.io/MamuWeb/logo.png" alt="MAMU Logo" 
@@ -61,16 +56,19 @@
                          onerror="this.onerror=null; this.src='https://via.placeholder.com/80?text=MUST';">
                 </a>
             </div>
+        </div>
 
-            <div class="text-center">
-                <h1 class="text-3xl md:text-5xl font-bold mb-2 text-emerald-900">Muslim Association of Meru University (MAMU) Registration Portal</h1>
-                <p class="text-emerald-700 italic font-medium">BISMILLAH. WELCOME ALL</p>
+        <!-- REGION 2: GREEN BACKGROUND FOR MERU UNIVERSITY TEXT -->
+        <div class="bg-[#10623a] text-white py-8 border-b-4 border-yellow-400">
+            <div class="container mx-auto px-4 text-center">
+                <h1 class="text-2xl md:text-4xl font-bold mb-2">Muslim Association of Meru University (MAMU) Registration Portal</h1>
+                <p class="text-emerald-100 italic font-medium">BISMILLAH. WELCOME ALL</p>
             </div>
         </div>
     </header>
 
-    <main class="container mx-auto px-4 -mt-8 pb-20 max-w-xl">
-        <!-- FORM CARD WITH YELLOW BACKGROUND -->
+    <main class="container mx-auto px-4 pt-10 pb-20 max-w-xl">
+        <!-- REGION 3: YELLOW BACKGROUND FOR REGISTRATION FORM -->
         <div class="bg-yellow-400 rounded-2xl shadow-xl overflow-hidden border-t-4 border-emerald-900">
             <form id="memberForm" class="p-6 md:p-8 space-y-4">
                 <h2 class="text-2xl font-bold text-emerald-900 mb-4 text-center">Register Student</h2>
