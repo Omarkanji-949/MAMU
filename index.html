@@ -34,8 +34,8 @@
             background: #fdfdfb;
         }
 
-        .islamic-gradient {
-            background: linear-gradient(180deg, #10623a 0%, #063820 100%);
+        .header-style {
+            background: #ffffff;
             border-bottom: 5px solid var(--gold);
         }
     </style>
@@ -43,10 +43,16 @@
 
 <body>
 
-    <header class="islamic-gradient text-white pt-8 pb-14 shadow-2xl">
+    <header class="header-style text-emerald-900 pt-8 pb-14 shadow-md">
         <div class="container mx-auto text-center px-4 flex flex-col items-center">
-            <h1 class="text-3xl md:text-5xl font-bold mb-2">Muslim Association of Meru University (MAMU) Registration Portal</h1>
-            <p class="text-emerald-100 italic">BISMILLAH. WELCOME ALL</p>
+            <!-- MAMU LOGO LINK WITH YELLOW BACKGROUND -->
+            <a href="https://mamu36673.github.io/MamuWeb/" target="_blank" class="mb-4 inline-block">
+                <img src="https://mamu36673.github.io/MamuWeb/logo.png" alt="MAMU Logo" 
+                     class="h-20 w-auto bg-yellow-400 p-2 rounded-xl shadow-lg border-2 border-yellow-500 hover:scale-105 transition-transform" 
+                     onerror="this.onerror=null; this.src='https://via.placeholder.com/80?text=MAMU';">
+            </a>
+            <h1 class="text-3xl md:text-5xl font-bold mb-2 text-emerald-900">Muslim Association of Meru University (MAMU) Registration Portal</h1>
+            <p class="text-emerald-700 italic font-medium">BISMILLAH. WELCOME ALL</p>
         </div>
     </header>
 
